@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\RolClave;
+use App\Support\Permisos;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -72,22 +72,22 @@ class User extends Authenticatable
 
     public function esAdmin(): bool
     {
-        return $this->rol?->clave === RolClave::AdminInstitucional->value;
+        return $this->rol?->clave === Permisos::ROL_ADMIN;
     }
 
     public function esJefeArea(): bool
     {
-        return $this->rol?->clave === RolClave::JefeArea->value;
+        return $this->rol?->clave === Permisos::ROL_JEFE;
     }
 
     public function esDirectivo(): bool
     {
-        return $this->rol?->clave === RolClave::Directivo->value;
+        return $this->rol?->clave === Permisos::ROL_DIRECTIVO;
     }
 
     public function esAuditor(): bool
     {
-        return $this->rol?->clave === RolClave::Auditor->value;
+        return $this->rol?->clave === Permisos::ROL_AUDITOR;
     }
 
     public function veArea(InstanciaCoordinacion $area): bool

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Actions\GuardarArea;
-use App\Enums\TipoArea;
 use App\Models\InstanciaCoordinacion;
 use Illuminate\Database\Seeder;
 
@@ -18,14 +17,14 @@ class AreasSeeder extends Seeder
         $despacho = $this->area([
             'codigo' => 'DES',
             'nombre' => 'Despacho',
-            'tipo' => TipoArea::Despacho->value,
+            'tipo' => 'despacho',
         ]);
 
         $areaA = $this->area([
             'padre_id' => $despacho->id,
             'codigo' => 'GAA',
             'nombre' => 'Área A',
-            'tipo' => TipoArea::Direccion->value,
+            'tipo' => 'direccion',
             'email' => 'area.a@tarija.gob.bo',
         ]);
 
@@ -33,7 +32,7 @@ class AreasSeeder extends Seeder
             'padre_id' => $despacho->id,
             'codigo' => 'CDAB',
             'nombre' => 'Área B',
-            'tipo' => TipoArea::Direccion->value,
+            'tipo' => 'direccion',
             'email' => 'area.b@tarija.gob.bo',
         ]);
 
@@ -41,7 +40,7 @@ class AreasSeeder extends Seeder
             'padre_id' => $areaA->id,
             'codigo' => 'SIS',
             'nombre' => 'Sistemas',
-            'tipo' => TipoArea::Unidad->value,
+            'tipo' => 'unidad',
         ]);
     }
 

@@ -2,10 +2,16 @@
 
 namespace App\Support;
 
-use App\Enums\RolClave;
-
 final class Permisos
 {
+    public const ROL_ADMIN = 'admin_institucional';
+    public const ROL_JEFE = 'jefe_area';
+    public const ROL_FUNCIONARIO = 'funcionario';
+    public const ROL_DIRECTIVO = 'directivo';
+    public const ROL_AUDITOR = 'auditor';
+
+    public const TIPOS_AREA = ['despacho', 'secretaria', 'direccion', 'unidad', 'area'];
+
     public const AREAS_VER = 'areas.ver';
     public const AREAS_CREAR = 'areas.crear';
     public const AREAS_EDITAR = 'areas.editar';
@@ -107,19 +113,13 @@ final class Permisos
         return $catalogo;
     }
 
-    public static function porRol(RolClave|string $rol): array
+    public static function porRol(string $rol): array
     {
-        $clave = $rol instanceof RolClave ? $rol : RolClave::tryFrom($rol);
-
-        if ($clave === null) {
-            return [];
-        }
-
         $catalogo = array_keys(self::catalogo());
 
-        return match ($clave) {
-            RolClave::AdminInstitucional => $catalogo,
-            RolClave::JefeArea => [
+        return match ($rol) {
+            self::ROL_ADMIN => $catalogo,
+            self::ROL_JEFE => [
                 self::AREAS_VER,
                 self::AREAS_EDITAR,
                 self::REGISTROS_VER,
@@ -138,25 +138,26 @@ final class Permisos
                 self::BITACORA_VER,
                 self::CHAT_PARTICIPAR,
             ],
-            RolClave::Funcionario => [
+            self::ROL_FUNCIONARIO => [
                 self::AREAS_VER,
                 self::REGISTROS_VER,
                 self::REGISTROS_CREAR,
                 self::REGISTROS_EDITAR,
                 self::CHAT_PARTICIPAR,
             ],
-            RolClave::Directivo => [
+            self::ROL_DIRECTIVO => [
                 self::AREAS_VER,
                 self::REPORTES_VER,
                 self::CHAT_PARTICIPAR,
             ],
-            RolClave::Auditor => [
+            self::ROL_AUDITOR => [
                 self::AREAS_VER,
                 self::REPORTES_VER,
                 self::AUDITORIAS_VER,
                 self::BITACORA_VER,
                 self::CHAT_PARTICIPAR,
             ],
+            default => [],
         };
     }
 }

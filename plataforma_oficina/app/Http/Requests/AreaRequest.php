@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\TipoArea;
+use App\Support\Permisos;
 use App\Models\InstanciaCoordinacion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,7 +31,7 @@ class AreaRequest extends FormRequest
                 Rule::unique('instancias_coordinacion', 'codigo')->ignore($id),
             ],
             'nombre' => ['required', 'string', 'max:150'],
-            'tipo' => ['nullable', Rule::enum(TipoArea::class)],
+            'tipo' => ['nullable', Rule::in(Permisos::TIPOS_AREA)],
             'email' => ['nullable', 'email', 'max:150'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'activo' => ['sometimes', 'boolean'],

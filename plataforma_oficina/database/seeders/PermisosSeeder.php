@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Enums\RolClave;
 use App\Models\Permiso;
 use App\Models\Rol;
 use App\Support\Permisos;
@@ -10,6 +9,14 @@ use Illuminate\Database\Seeder;
 
 class PermisosSeeder extends Seeder
 {
+    private const ROLES = [
+        Permisos::ROL_ADMIN,
+        Permisos::ROL_JEFE,
+        Permisos::ROL_FUNCIONARIO,
+        Permisos::ROL_DIRECTIVO,
+        Permisos::ROL_AUDITOR,
+    ];
+
     public function run(): void
     {
         foreach (Permisos::catalogo() as $clave => $definicion) {
@@ -25,8 +32,8 @@ class PermisosSeeder extends Seeder
 
         $ids = Permiso::query()->whereIn('clave', array_keys(Permisos::catalogo()))->pluck('id', 'clave');
 
-        foreach (RolClave::cases() as $clave) {
-            $rol = Rol::query()->where('clave', $clave->value)->firstOrFail();
+        foreach (self::ROLES as $clave) {
+            $rol = Rol::query()->where('clave', $clave)->firstOrFail();
             $permisos = array_map(
                 fn (string $permiso) => $ids[$permiso],
                 Permisos::porRol($clave)

@@ -2,7 +2,7 @@
 
 namespace App\Actions;
 
-use App\Enums\RolClave;
+use App\Support\Permisos;
 use App\Models\Permiso;
 use App\Models\Rol;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +12,7 @@ class SincronizarPermisosRol
 {
     public function execute(Rol $rol, array $permisos): Rol
     {
-        if ($rol->clave === RolClave::AdminInstitucional->value) {
+        if ($rol->clave === Permisos::ROL_ADMIN) {
             throw ValidationException::withMessages([
                 'permisos' => 'Los permisos del administrador institucional no se pueden modificar.',
             ]);
