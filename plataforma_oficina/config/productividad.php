@@ -31,4 +31,6 @@ return [
 
     'coordinacion_dias_revisar' => 2,
 
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
 ];

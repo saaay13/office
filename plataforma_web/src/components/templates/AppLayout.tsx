@@ -1,29 +1,22 @@
-import type { ReactNode } from 'react'
+import { Outlet } from 'react-router-dom'
+import { AppHeader } from '../organisms/AppHeader'
+import { AppSidebar } from '../organisms/AppSidebar'
 
-type Props = {
-  children: ReactNode
-}
-
-export function AppLayout({ children }: Props) {
+export function AppLayout() {
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-secondary-600">
-              Gobernación
-            </p>
-            <h1 className="text-lg font-semibold text-primary-700">
-              Control de Productividad
-            </h1>
+    <div className="flex min-h-svh flex-col bg-background text-foreground">
+      <AppHeader />
+      <div className="flex flex-1 flex-col md:flex-row">
+        <AppSidebar />
+        <main className="premium-scroll min-w-0 flex-1 px-6 py-8">
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
           </div>
-          <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700">
-            MVP
-          </span>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+        </main>
+      </div>
+      <footer className="bg-footer-bg px-6 py-3 text-center text-xs text-footer-text">
+        Gobernación Departamental · Plataforma de Control de Productividad
+      </footer>
     </div>
   )
 }
