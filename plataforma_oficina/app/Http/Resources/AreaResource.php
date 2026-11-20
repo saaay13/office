@@ -20,6 +20,7 @@ class AreaResource extends JsonResource
             'email' => $this->email,
             'telefono' => $this->telefono,
             'activo' => $this->activo,
+            'responsable_id' => $this->responsable_id,
             'padre' => $this->whenLoaded('padre', fn (): ?array => $this->padre === null ? null : [
                 'id' => $this->padre->id,
                 'nombre' => $this->padre->nombre,

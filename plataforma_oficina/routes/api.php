@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/perfil', [PerfilController::class, 'update']);
     Route::get('/opciones', [OpcionesController::class, 'index']);
 
+    Route::get('areas/arbol', [AreaController::class, 'arbol']);
     Route::apiResource('areas', AreaController::class);
     Route::apiResource('cargos', CargoController::class);
     Route::apiResource('roles', RolController::class)->parameters(['roles' => 'rol']);

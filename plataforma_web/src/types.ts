@@ -18,6 +18,7 @@ export type Area = {
   email: string | null
   telefono: string | null
   activo: boolean
+  responsable_id: number | null
   padre?: { id: number; nombre: string; codigo: string | null } | null
   responsable?: { id: number; nombre: string } | null
 }
