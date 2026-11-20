@@ -22,7 +22,7 @@ class AuthTest extends TestCase
     {
         $porUsuario = $this->postJson('/api/auth/login', [
             'usuario' => 'pa',
-            'password' => 'Usuario12345!',
+            'password' => '123456',
         ])->assertOk()->assertJsonStructure(['user' => ['id', 'usuario'], 'token', 'permisos']);
 
         $token = $porUsuario->json('token');
@@ -36,8 +36,18 @@ class AuthTest extends TestCase
 
         $this->postJson('/api/auth/login', [
             'usuario' => 'pa@tarija.gob.bo',
-            'password' => 'Usuario12345!',
+            'password' => '123456',
         ])->assertOk()->assertJsonPath('user.usuario', 'pa');
+    }
+
+    public function test_el_usuario_de_prueba_ingresa_con_su_correo_y_clave(): void
+    {
+        $this->postJson('/api/auth/login', [
+            'usuario' => 'prueba@gmail.com',
+            'password' => '123456',
+        ])->assertOk()
+            ->assertJsonPath('user.usuario', 'prueba')
+            ->assertJsonStructure(['user' => ['id', 'usuario'], 'token', 'permisos']);
     }
 
     public function test_rechaza_credenciales_invalidas_y_usuario_inactivo(): void
@@ -51,7 +61,7 @@ class AuthTest extends TestCase
 
         $this->postJson('/api/auth/login', [
             'usuario' => 'pa',
-            'password' => 'Usuario12345!',
+            'password' => '123456',
         ])->assertStatus(422)->assertJsonValidationErrors('usuario');
     }
 
@@ -59,7 +69,7 @@ class AuthTest extends TestCase
     {
         $token = $this->postJson('/api/auth/login', [
             'usuario' => 'pa',
-            'password' => 'Usuario12345!',
+            'password' => '123456',
         ])->assertOk()->json('token');
 
         User::query()->where('usuario', 'pa')->update(['activo' => false]);

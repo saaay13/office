@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { Clock, KeyRound, ShieldCheck } from 'lucide-react'
 import { Alert } from '../atoms/Alert'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
@@ -61,42 +62,60 @@ export function PerfilForm() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <Card className="lg:col-span-1">
+    <div className="grid gap-4 lg:grid-cols-[0.85fr_1.5fr]">
+      <Card className="self-start">
         <div className="flex flex-col items-center text-center">
-          <span className="flex size-16 items-center justify-center rounded-full bg-primary-50 text-xl font-semibold text-primary-700">
-            {usuario.nombres.charAt(0)}{usuario.apellidos.charAt(0)}
+          <span className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-700 to-brand-950 text-xl font-semibold text-white shadow-md shadow-brand-900/20">
+            {usuario.nombres.charAt(0)}
+            {usuario.apellidos.charAt(0)}
           </span>
-          <h3 className="mt-4 text-lg font-semibold text-foreground">{usuario.nombre_completo}</h3>
-          <p className="text-sm text-muted-foreground">{usuario.usuario}</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Badge tono="primario">{usuario.rol?.nombre ?? '—'}</Badge>
-            <Badge tono="secundario">{usuario.area?.nombre ?? '—'}</Badge>
+
+          <h3 className="mt-4 text-base font-semibold text-ink">{usuario.nombre_completo}</h3>
+          <p className="text-[11px] text-muted">@{usuario.usuario}</p>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+            <Badge tono="primario">
+              <ShieldCheck size={10} />
+              {usuario.rol?.nombre ?? 'Sin rol'}
+            </Badge>
+            <Badge tono="secundario">{usuario.area?.nombre ?? 'Sin área'}</Badge>
           </div>
         </div>
-        <dl className="mt-6 space-y-3 border-t border-border pt-4 text-sm">
+
+        <dl className="mt-6 space-y-3 border-t border-line pt-4 text-[11px]">
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Cargo</dt>
-            <dd className="font-medium text-foreground">{usuario.cargo?.nombre ?? '—'}</dd>
+            <dt className="text-muted">Cargo</dt>
+            <dd className="text-right font-semibold text-ink">{usuario.cargo?.nombre ?? '—'}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Último acceso</dt>
-            <dd className="font-medium text-foreground">
+            <dt className="text-muted">Área</dt>
+            <dd className="text-right font-semibold text-ink">{usuario.area?.nombre ?? '—'}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="flex items-center gap-1 text-muted">
+              <Clock size={11} />
+              Último acceso
+            </dt>
+            <dd className="text-right font-semibold text-ink">
               {usuario.ultimo_acceso_at === null
                 ? '—'
-                : new Date(usuario.ultimo_acceso_at).toLocaleString('es-BO', { timeZone: 'America/La_Paz' })}
+                : new Date(usuario.ultimo_acceso_at).toLocaleString('es-BO', {
+                    timeZone: 'America/La_Paz',
+                  })}
             </dd>
           </div>
         </dl>
       </Card>
 
-      <Card className="lg:col-span-2">
-        <h3 className="text-lg font-semibold text-primary-700">Datos personales</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Actualice su información. El rol y el área se administran desde Usuarios.
-        </p>
+      <Card>
+        <div className="mb-5">
+          <h3 className="text-sm font-semibold text-ink">Datos personales</h3>
+          <p className="mt-1 text-[11px] text-muted">
+            Actualice su información. El rol y el área se administran desde Usuarios.
+          </p>
+        </div>
 
-        <form onSubmit={(evento) => void guardar(evento)} className="mt-6 space-y-4" noValidate>
+        <form onSubmit={(evento) => void guardar(evento)} className="space-y-5" noValidate>
           {aviso && <Alert tono="exito">{aviso}</Alert>}
           {fallo && <Alert tono="error">{fallo}</Alert>}
 
@@ -131,8 +150,12 @@ export function PerfilForm() {
             />
           </div>
 
-          <fieldset className="rounded-lg border border-border p-4">
-            <legend className="px-2 text-sm font-medium text-foreground">Cambiar contraseña</legend>
+          <fieldset className="rounded-lg border border-line bg-app/40 p-4">
+            <legend className="flex items-center gap-1.5 px-2 text-[11px] font-semibold text-ink-soft">
+              <KeyRound size={12} className="text-brand-700" />
+              Cambiar contraseña
+            </legend>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 etiqueta="Nueva contraseña"
@@ -149,11 +172,12 @@ export function PerfilForm() {
                 autoComplete="new-password"
                 value={confirmacion}
                 onChange={(evento) => setConfirmacion(evento.target.value)}
+                placeholder="Repita la nueva contraseña"
               />
             </div>
           </fieldset>
 
-          <div className="flex justify-end border-t border-border pt-4">
+          <div className="flex justify-end border-t border-line pt-4">
             <Button type="submit" cargando={guardando}>
               Guardar cambios
             </Button>

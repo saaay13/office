@@ -12,9 +12,9 @@ class SincronizarPermisosRol
 {
     public function execute(Rol $rol, array $permisos): Rol
     {
-        if ($rol->clave === Permisos::ROL_ADMIN) {
+        if (in_array($rol->clave, Permisos::ROLES, true)) {
             throw ValidationException::withMessages([
-                'permisos' => 'Los permisos del administrador institucional no se pueden modificar.',
+                'permisos' => 'Los permisos de los roles del sistema no se pueden modificar.',
             ]);
         }
 

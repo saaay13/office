@@ -6,6 +6,7 @@ use App\Models\InstanciaCoordinacion;
 use App\Models\Permiso;
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\Permisos;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -87,7 +88,7 @@ class GestionTest extends TestCase
 
     public function test_no_permite_modificar_los_permisos_del_administrador(): void
     {
-        $admin = Rol::query()->where('clave', 'admin_institucional')->firstOrFail();
+        $admin = Rol::query()->where('clave', Permisos::ROL_ADMIN_GENERAL)->firstOrFail();
 
         $this->putJson('/api/roles/'.$admin->id, [
             'nombre' => $admin->nombre,
@@ -97,7 +98,7 @@ class GestionTest extends TestCase
 
     public function test_crea_un_usuario_y_lo_desactiva(): void
     {
-        $rol = Rol::query()->where('clave', 'funcionario')->firstOrFail();
+        $rol = Rol::query()->where('clave', Permisos::ROL_PERSONAL)->firstOrFail();
         $area = InstanciaCoordinacion::query()->where('codigo', 'GAA')->firstOrFail();
 
         $usuario = $this->postJson('/api/usuarios', [

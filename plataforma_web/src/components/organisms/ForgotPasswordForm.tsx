@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowLeft, Mail, Send } from 'lucide-react'
 import { Alert } from '../atoms/Alert'
 import { Button } from '../atoms/Button'
 import { Input } from '../atoms/Input'
@@ -42,14 +43,20 @@ export function ForgotPasswordForm() {
         onChange={(evento) => setEmail(evento.target.value)}
         error={errores.email}
         placeholder="nombre@tarija.gob.bo"
+        prefijo={<Mail size={14} />}
         required
       />
 
-      <Button type="submit" className="w-full" cargando={enviando}>
+      <Button type="submit" className="h-[42px] w-full text-xs" cargando={enviando}>
         Enviar enlace de recuperación
+        <Send size={14} />
       </Button>
 
-      <Link to="/ingresar" className="block text-center text-sm font-medium text-secondary-600 hover:text-secondary-700">
+      <Link
+        to="/ingresar"
+        className="flex items-center justify-center gap-1.5 pt-1 text-[10px] font-semibold text-brand-700 hover:underline"
+      >
+        <ArrowLeft size={13} />
         Volver al ingreso
       </Link>
     </form>

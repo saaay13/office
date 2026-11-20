@@ -42,6 +42,13 @@ class AreasSeeder extends Seeder
             'nombre' => 'Sistemas',
             'tipo' => 'unidad',
         ]);
+
+        $this->area([
+            'padre_id' => $despacho->id,
+            'codigo' => 'PRUEBA',
+            'nombre' => 'Prueba',
+            'tipo' => 'area',
+        ]);
     }
 
     private function area(array $datos): InstanciaCoordinacion

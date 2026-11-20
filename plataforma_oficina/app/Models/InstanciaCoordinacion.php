@@ -59,8 +59,16 @@ class InstanciaCoordinacion extends Model
 
     public function scopeVisiblesPara(Builder $query, User $user): Builder
     {
-        if ($user->esAdmin() || $user->esDirectivo() || $user->esAuditor()) {
+        if ($user->esAdminGeneral()) {
             return $query;
+        }
+
+        if ($user->esAdminVista()) {
+            $ids = $user->areasAsignadasIds();
+
+            if ($ids !== []) {
+                return $query->whereIn('id', $ids);
+            }
         }
 
         $area = $user->area;
@@ -69,7 +77,7 @@ class InstanciaCoordinacion extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->esJefeArea()) {
+        if ($user->esEncargado()) {
             return $query->where(function (Builder $consulta) use ($area): void {
                 $consulta->where('id', $area->id)
                     ->orWhere('ruta', 'like', $area->ruta.'%');

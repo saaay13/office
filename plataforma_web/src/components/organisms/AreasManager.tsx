@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Plus } from 'lucide-react'
 import { Alert } from '../atoms/Alert'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
+import { IconoAccion } from '../atoms/IconoAccion'
 import { Input, Select, Textarea } from '../atoms/Input'
 import { ConfirmDialog } from '../molecules/ConfirmDialog'
 import { EmptyState } from '../molecules/EmptyState'
 import { FormModal } from '../molecules/FormModal'
 import { SearchField } from '../molecules/SearchField'
+import { Tabla } from '../molecules/Tabla'
+import type { ColumnaTabla } from '../molecules/Tabla'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
@@ -56,15 +60,88 @@ export function AreasManager() {
   const areas = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
 
-    return elementos.filter((area) =>
-      texto === '' ||
-      area.nombre.toLowerCase().includes(texto) ||
-      (area.codigo ?? '').toLowerCase().includes(texto),
+    return elementos.filter(
+      (area) =>
+        texto === '' ||
+        area.nombre.toLowerCase().includes(texto) ||
+        (area.codigo ?? '').toLowerCase().includes(texto),
     )
   }, [elementos, busqueda])
 
-  const esAdmin = usuario?.rol?.clave === 'admin_institucional'
-  const esJefe = usuario?.rol?.clave === 'jefe_area'
+  const esAdminVista = usuario?.rol?.clave === 'admin_vista'
+
+  const columnas: ColumnaTabla<Area>[] = [
+    {
+      clave: 'sigla',
+      nombre: 'Sigla',
+      celda: (area) => <span className="font-mono text-[11px] text-brand-700">{area.codigo ?? '—'}</span>,
+    },
+    {
+      clave: 'nombre',
+      nombre: 'Nombre',
+      celda: (area) => (
+        <>
+          <span className="font-semibold text-ink">{area.nombre}</span>
+          <span className="mt-0.5 block text-[10px] font-normal text-muted">
+            {area.padre?.nombre ?? 'Raíz'}
+          </span>
+        </>
+      ),
+    },
+    {
+      clave: 'tipo',
+      nombre: 'Tipo',
+      celda: (area) => <span className="capitalize">{area.tipo ?? '—'}</span>,
+    },
+    {
+      clave: 'nivel',
+      nombre: 'Nivel',
+      celda: (area) => <span>{area.nivel ?? '—'}</span>,
+    },
+    {
+      clave: 'responsable',
+      nombre: 'Responsable',
+      celda: (area) => <span>{area.responsable?.nombre ?? 'Sin asignar'}</span>,
+    },
+    {
+      clave: 'estado',
+      nombre: 'Estado',
+      celda: (area) => (
+        <Badge tono={area.activo ? 'exito' : 'neutro'}>{area.activo ? 'Activa' : 'Inactiva'}</Badge>
+      ),
+    },
+    {
+      clave: 'acciones',
+      nombre: 'Acciones',
+      alineacion: 'derecha',
+      celda: (area) => (
+        <div className="flex justify-end gap-1.5">
+          {tienePermiso('areas.editar') && (
+            <Button
+              variante="contorno"
+              tamano="icono"
+              onClick={() => abrirEdicion(area)}
+              aria-label={`Editar ${area.nombre}`}
+              title={`Editar ${area.nombre}`}
+            >
+              <IconoAccion nombre="editar" />
+            </Button>
+          )}
+          {tienePermiso('areas.desactivar') && area.activo && (
+            <Button
+              variante="peligroSuave"
+              tamano="icono"
+              onClick={() => setADesactivar(area)}
+              aria-label={`Desactivar ${area.nombre}`}
+              title={`Desactivar ${area.nombre}`}
+            >
+              <IconoAccion nombre="desactivar" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
 
   function abrirNueva(): void {
     setEditando(null)
@@ -139,78 +216,42 @@ export function AreasManager() {
     }
   }
 
-  function puedeEditar(area: Area): boolean {
-    if (!tienePermiso('areas.editar')) {
-      return false
-    }
-
-    return esAdmin || (esJefe && area.id === usuario?.area_id)
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar área o sigla" />
+
         {tienePermiso('areas.crear') && (
-          <Button onClick={abrirNueva}>Nueva área</Button>
+          <Button onClick={abrirNueva}>
+            <Plus size={14} />
+            Nueva área
+          </Button>
         )}
       </div>
 
       {aviso && <Alert tono="exito">{aviso}</Alert>}
       {error && <Alert tono="error">{error}</Alert>}
       {fallo && !modalAbierta && <Alert tono="error">{fallo}</Alert>}
+      {esAdminVista && (
+        <Alert tono="info">Está consultando las áreas asignadas en modo solo lectura.</Alert>
+      )}
 
       {cargando ? (
-        <div className="rounded-lg bg-card p-10 text-center text-sm text-muted-foreground">Cargando áreas...</div>
-      ) : areas.length === 0 ? (
-        <EmptyState titulo="Sin áreas" descripcion="No hay áreas disponibles para su usuario." />
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-3xl text-left text-sm">
-            <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Sigla</th>
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Tipo</th>
-                <th className="px-4 py-3">Nivel</th>
-                <th className="px-4 py-3">Responsable</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {areas.map((area) => (
-                <tr key={area.id} className="hover:bg-muted/40">
-                  <td className="px-4 py-3 font-medium text-primary-600">{area.codigo ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-foreground">{area.nombre}</span>
-                    <span className="block text-xs text-muted-foreground">{area.padre?.nombre ?? 'Raíz'}</span>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{area.tipo ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{area.nivel ?? '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{area.responsable?.nombre ?? 'Sin asignar'}</td>
-                  <td className="px-4 py-3">
-                    <Badge tono={area.activo ? 'exito' : 'neutro'}>{area.activo ? 'Activa' : 'Inactiva'}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      {puedeEditar(area) && (
-                        <Button variante="contorno" tamano="pequeno" onClick={() => abrirEdicion(area)}>
-                          Editar
-                        </Button>
-                      )}
-                      {esAdmin && area.activo && (
-                        <Button variante="peligro" tamano="pequeno" onClick={() => setADesactivar(area)}>
-                          Desactivar
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="rounded-xl border border-line bg-white p-10 text-center text-[11px] text-muted">
+          Cargando áreas...
         </div>
+      ) : areas.length === 0 ? (
+        <EmptyState
+          titulo="Sin áreas"
+          descripcion="No hay áreas disponibles para su usuario o la búsqueda actual."
+        />
+      ) : (
+        <Tabla
+          columnas={columnas}
+          datos={areas}
+          obtenerClave={(area) => area.id}
+          mensajeVacio="No hay áreas disponibles para su usuario."
+        />
       )}
 
       {modalAbierta && (
@@ -221,6 +262,7 @@ export function AreasManager() {
         >
           <form onSubmit={(evento) => void guardar(evento)} className="space-y-4">
             {fallo && <Alert tono="error">{fallo}</Alert>}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 etiqueta="Nombre"
@@ -239,7 +281,9 @@ export function AreasManager() {
                 etiqueta="Área padre"
                 value={formulario.padre_id}
                 onChange={(evento) => setFormulario({ ...formulario, padre_id: evento.target.value })}
-                opciones={elementos.filter((area) => area.id !== editando?.id).map((area) => ({ valor: area.id, texto: area.nombre }))}
+                opciones={elementos
+                  .filter((area) => area.id !== editando?.id)
+                  .map((area) => ({ valor: area.id, texto: area.nombre }))}
                 permitirVacio
                 textoVacio="Ninguna (raíz)"
               />
@@ -263,6 +307,7 @@ export function AreasManager() {
                 onChange={(evento) => setFormulario({ ...formulario, telefono: evento.target.value })}
               />
             </div>
+
             <Textarea
               etiqueta="Ruta materializada"
               value={editando?.ruta ?? ''}
@@ -270,7 +315,8 @@ export function AreasManager() {
               rows={2}
               placeholder="La ruta se genera automáticamente"
             />
-            <div className="flex justify-end gap-2 border-t border-border pt-4">
+
+            <div className="flex justify-end gap-2 border-t border-line pt-4">
               <Button variante="contorno" onClick={() => setModalAbierta(false)}>
                 Cancelar
               </Button>
@@ -285,7 +331,7 @@ export function AreasManager() {
       {aDesactivar && (
         <ConfirmDialog
           titulo="Desactivar área"
-          mensaje={`¿Desactivar "${aDesactivar.nombre}"? No se puede desactivar un área con hijas activas.`}
+          mensaje={`¿Desactivar "${aDesactivar.nombre}"? No se puede desactivar un área con áreas hijas activas.`}
           confirmando={desactivando}
           onConfirmar={() => void desactivar()}
           onCancelar={() => setADesactivar(null)}

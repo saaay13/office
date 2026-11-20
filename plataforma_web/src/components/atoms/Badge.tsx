@@ -3,18 +3,20 @@ import type { ReactNode } from 'react'
 export type Tono = 'neutro' | 'primario' | 'secundario' | 'exito' | 'advertencia' | 'error' | 'info'
 
 const estilos: Record<Tono, string> = {
-  neutro: 'bg-neutral-100 text-neutral-700',
-  primario: 'bg-primary-50 text-primary-700',
-  secundario: 'bg-secondary-50 text-secondary-700',
-  exito: 'bg-success/15 text-success-dark',
-  advertencia: 'bg-warning/20 text-warning-dark',
-  error: 'bg-error/15 text-error',
-  info: 'bg-info/15 text-primary-600',
+  neutro: 'bg-app text-muted',
+  primario: 'bg-brand-50 text-brand-700',
+  secundario: 'bg-brand-100 text-brand-800',
+  exito: 'bg-success-soft text-[#166534]',
+  advertencia: 'bg-warning-soft text-warning',
+  error: 'bg-danger-soft text-danger-strong',
+  info: 'bg-info-soft text-brand-800',
 }
 
 export function Badge({ tono = 'neutro', children }: { tono?: Tono; children: ReactNode }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${estilos[tono]}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${estilos[tono]}`}
+    >
       {children}
     </span>
   )

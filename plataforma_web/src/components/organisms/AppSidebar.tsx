@@ -1,66 +1,158 @@
 import { NavLink } from 'react-router-dom'
+import type { LucideIcon } from 'lucide-react'
+import {
+  BriefcaseBusiness,
+  Building2,
+  KeyRound,
+  LayoutDashboard,
+  ShieldCheck,
+  UserRound,
+  Users,
+} from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 type Enlace = {
   ruta: string
   texto: string
+  icono: LucideIcon
   permiso?: string
-  icono: string
 }
 
-const enlaces: Enlace[] = [
-  { ruta: '/', texto: 'Inicio', icono: 'inicio' },
-  { ruta: '/areas', texto: 'Áreas', permiso: 'areas.ver', icono: 'areas' },
-  { ruta: '/cargos', texto: 'Cargos', permiso: 'cargos.ver', icono: 'cargos' },
-  { ruta: '/roles', texto: 'Roles', permiso: 'roles.ver', icono: 'roles' },
-  { ruta: '/permisos', texto: 'Permisos', permiso: 'permisos.ver', icono: 'permisos' },
-  { ruta: '/usuarios', texto: 'Usuarios', permiso: 'usuarios.ver', icono: 'usuarios' },
-  { ruta: '/perfil', texto: 'Mi perfil', icono: 'perfil' },
+type Grupo = {
+  titulo: string
+  enlaces: Enlace[]
+}
+
+const grupos: Grupo[] = [
+  {
+    titulo: 'Panel',
+    enlaces: [{ ruta: '/', texto: 'Inicio', icono: LayoutDashboard }],
+  },
+  {
+    titulo: 'Organización',
+    enlaces: [
+      { ruta: '/areas', texto: 'Áreas', icono: Building2, permiso: 'areas.ver' },
+      { ruta: '/cargos', texto: 'Cargos', icono: BriefcaseBusiness, permiso: 'cargos.ver' },
+    ],
+  },
+  {
+    titulo: 'Seguridad',
+    enlaces: [
+      { ruta: '/roles', texto: 'Roles', icono: ShieldCheck, permiso: 'roles.ver' },
+      { ruta: '/permisos', texto: 'Permisos', icono: KeyRound, permiso: 'permisos.ver' },
+      { ruta: '/usuarios', texto: 'Usuarios', icono: Users, permiso: 'usuarios.ver' },
+    ],
+  },
+  {
+    titulo: 'Cuenta',
+    enlaces: [{ ruta: '/perfil', texto: 'Mi perfil', icono: UserRound }],
+  },
 ]
 
-function Icono({ nombre }: { nombre: string }) {
-  const trazos: Record<string, string> = {
-    inicio: 'M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
-    areas: 'M4 5h16v5H4zm0 9h7v5H4zm11 0h5v5h-5z',
-    cargos: 'M4 7h16M4 12h11M4 17h7',
-    roles: 'M12 3 4 6v5c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6z',
-    permisos: 'M6 10V7a6 6 0 0 1 12 0v3M5 10h14v10H5z',
-    usuarios: 'M16 19v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 9a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M17 11a3 3 0 1 0-2-5.2M21 19v-1a4 4 0 0 0-3-3.9',
-    perfil: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21a8 8 0 0 1 16 0',
-  }
-
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d={trazos[nombre] ?? trazos.inicio} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+type Props = {
+  abierto: boolean
+  onCerrar: () => void
 }
 
-export function AppSidebar() {
-  const { tienePermiso } = useAuth()
-  const visibles = enlaces.filter((enlace) => !enlace.permiso || tienePermiso(enlace.permiso))
+export function AppSidebar({ abierto, onCerrar }: Props) {
+  const { usuario, tienePermiso } = useAuth()
+
+  const iniciales =
+    usuario === null
+      ? 'US'
+      : `${usuario.nombres.charAt(0)}${usuario.apellidos.charAt(0)}`.toUpperCase()
 
   return (
-    <nav aria-label="Navegación principal" className="premium-scroll overflow-x-auto border-b border-border bg-card md:w-60 md:shrink-0 md:overflow-visible md:border-r md:border-b-0">
-      <div className="flex gap-1 p-2 md:flex-col md:p-4">
-        {visibles.map((enlace) => (
-          <NavLink
-            key={enlace.ruta}
-            to={enlace.ruta}
-            end={enlace.ruta === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`
+    <>
+      <div
+        className={`fixed inset-0 z-30 bg-brand-950/45 backdrop-blur-[2px] transition-opacity lg:hidden ${
+          abierto ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={onCerrar}
+        aria-hidden="true"
+      />
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-[232px] flex-col bg-brand-900 text-white transition-transform duration-200 lg:translate-x-0 ${
+          abierto ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-white/10 px-3.5">
+          <div className="flex size-9 items-center justify-center rounded-lg border border-[#24a8ff]/60 bg-brand-800">
+            <ShieldCheck size={21} aria-hidden="true" />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold tracking-[0.08em]">GOBERNACIÓN</p>
+            <p className="text-[9px] text-blue-200">Sistema de Control</p>
+          </div>
+        </div>
+
+        <nav className="app-scroll flex-1 overflow-y-auto px-2.5 py-4" aria-label="Navegación principal">
+          {grupos.map((grupo) => {
+            const visibles = grupo.enlaces.filter(
+              (enlace) => !enlace.permiso || tienePermiso(enlace.permiso),
+            )
+
+            if (visibles.length === 0) {
+              return null
             }
-          >
-            <Icono nombre={enlace.icono} />
-            {enlace.texto}
-          </NavLink>
-        ))}
-      </div>
-    </nav>
+
+            return (
+              <div key={grupo.titulo} className="mb-5">
+                <p className="mb-1.5 px-2 text-[8px] font-semibold tracking-[0.16em] text-blue-200/75 uppercase">
+                  {grupo.titulo}
+                </p>
+
+                <div className="space-y-1">
+                  {visibles.map((enlace) => (
+                    <NavLink
+                      key={enlace.ruta}
+                      to={enlace.ruta}
+                      end={enlace.ruta === '/'}
+                      onClick={onCerrar}
+                      className={({ isActive }) =>
+                        `flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[11px] font-medium transition ${
+                          isActive
+                            ? 'bg-brand-700 text-white shadow-sm'
+                            : 'text-blue-100/75 hover:bg-white/10 hover:text-white'
+                        }`
+                      }
+                    >
+                      <enlace.icono size={15} aria-hidden="true" />
+                      {enlace.texto}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </nav>
+
+        <div className="shrink-0 border-t border-white/10 p-3">
+          {usuario?.area && (
+            <div className="mb-3 flex items-center gap-2 rounded-md bg-white/10 px-2.5 py-2">
+              <Building2 size={13} className="shrink-0 text-blue-200" />
+              <span className="truncate text-[9px] text-blue-50">{usuario.area.nombre}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold">
+              {iniciales}
+            </div>
+
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-semibold">
+                {usuario?.nombre_completo ?? 'Usuario'}
+              </p>
+              <p className="truncate text-[8px] text-blue-200">
+                {usuario?.rol?.nombre ?? 'Sin rol asignado'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
   )
 }

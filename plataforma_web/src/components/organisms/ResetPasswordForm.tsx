@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, ArrowRight, KeyRound, LockKeyhole, Mail } from 'lucide-react'
 import { Alert } from '../atoms/Alert'
 import { Button } from '../atoms/Button'
 import { Input } from '../atoms/Input'
@@ -53,8 +54,10 @@ export function ResetPasswordForm() {
         value={correo}
         onChange={(evento) => setCorreo(evento.target.value)}
         error={errores.email}
+        prefijo={<Mail size={14} />}
         required
       />
+
       <Input
         etiqueta="Nueva contraseña"
         type="password"
@@ -63,8 +66,10 @@ export function ResetPasswordForm() {
         onChange={(evento) => setClave(evento.target.value)}
         error={errores.password}
         pista="Mínimo 8 caracteres"
+        prefijo={<LockKeyhole size={14} />}
         required
       />
+
       <Input
         etiqueta="Confirmar contraseña"
         type="password"
@@ -72,18 +77,32 @@ export function ResetPasswordForm() {
         value={confirmacion}
         onChange={(evento) => setConfirmacion(evento.target.value)}
         placeholder="Repita la nueva contraseña"
+        prefijo={<KeyRound size={14} />}
         required
       />
 
       {exito ? (
-        <Link to="/ingresar" className="block w-full rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary-700">
+        <Link
+          to="/ingresar"
+          className="flex h-[42px] w-full items-center justify-center gap-1.5 rounded-md bg-brand-700 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-800"
+        >
           Ir al ingreso
+          <ArrowRight size={14} />
         </Link>
       ) : (
-        <Button type="submit" className="w-full" cargando={enviando}>
+        <Button type="submit" className="h-[42px] w-full text-xs" cargando={enviando}>
           Actualizar contraseña
+          <ArrowRight size={14} />
         </Button>
       )}
+
+      <Link
+        to="/ingresar"
+        className="flex items-center justify-center gap-1.5 pt-1 text-[10px] font-semibold text-brand-700 hover:underline"
+      >
+        <ArrowLeft size={13} />
+        Volver al ingreso
+      </Link>
     </form>
   )
 }

@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Plus } from 'lucide-react'
 import { Alert } from '../atoms/Alert'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
+import { IconoAccion } from '../atoms/IconoAccion'
 import { Input, Textarea } from '../atoms/Input'
 import { ConfirmDialog } from '../molecules/ConfirmDialog'
 import { EmptyState } from '../molecules/EmptyState'
 import { FormModal } from '../molecules/FormModal'
 import { SearchField } from '../molecules/SearchField'
+import { Tabla } from '../molecules/Tabla'
+import type { ColumnaTabla } from '../molecules/Tabla'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
@@ -56,13 +60,86 @@ export function RolesManager() {
     }
   }, [])
 
+  const permisosPorModulo = useMemo(() => {
+    return Array.from(
+      permisos.reduce<Map<string, Permiso[]>>((grupos, permiso) => {
+        const lista = grupos.get(permiso.modulo) ?? []
+        lista.push(permiso)
+        grupos.set(permiso.modulo, lista)
+        return grupos
+      }, new Map()),
+    ).sort(([moduloA], [moduloB]) => moduloA.localeCompare(moduloB))
+  }, [permisos])
+
   const roles = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
 
-    return elementos.filter((rol) =>
-      texto === '' || rol.nombre.toLowerCase().includes(texto) || rol.clave.includes(texto),
+    return elementos.filter(
+      (rol) =>
+        texto === '' || rol.nombre.toLowerCase().includes(texto) || rol.clave.includes(texto),
     )
   }, [elementos, busqueda])
+
+  const columnas: ColumnaTabla<Rol>[] = [
+    {
+      clave: 'rol',
+      nombre: 'Rol',
+      celda: (rol) => (
+        <span className="inline-flex flex-wrap items-center gap-1.5">
+          <span className="font-semibold text-ink">{rol.nombre}</span>
+          {rol.es_sistema && <Badge tono="primario">Sistema</Badge>}
+        </span>
+      ),
+    },
+    {
+      clave: 'clave',
+      nombre: 'Clave',
+      celda: (rol) => <span className="font-mono text-[11px] text-brand-700">{rol.clave}</span>,
+    },
+    {
+      clave: 'permisos',
+      nombre: 'Permisos',
+      celda: (rol) => <span>{rol.permisos?.length ?? '—'}</span>,
+    },
+    {
+      clave: 'estado',
+      nombre: 'Estado',
+      celda: (rol) => (
+        <Badge tono={rol.activo ? 'exito' : 'neutro'}>{rol.activo ? 'Activo' : 'Inactivo'}</Badge>
+      ),
+    },
+    {
+      clave: 'acciones',
+      nombre: 'Acciones',
+      alineacion: 'derecha',
+      celda: (rol) => (
+        <div className="flex justify-end gap-1.5">
+          {tienePermiso('roles.editar') && (
+            <Button
+              variante="contorno"
+              tamano="icono"
+              onClick={() => abrirEdicion(rol)}
+              aria-label={`Editar ${rol.nombre}`}
+              title={`Editar ${rol.nombre}`}
+            >
+              <IconoAccion nombre="editar" />
+            </Button>
+          )}
+          {tienePermiso('roles.desactivar') && rol.activo && !rol.es_sistema && (
+            <Button
+              variante="peligroSuave"
+              tamano="icono"
+              onClick={() => setADesactivar(rol)}
+              aria-label={`Desactivar ${rol.nombre}`}
+              title={`Desactivar ${rol.nombre}`}
+            >
+              <IconoAccion nombre="desactivar" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
 
   function abrirNuevo(): void {
     setEditando(null)
@@ -78,7 +155,9 @@ export function RolesManager() {
       nombre: rol.nombre,
       descripcion: rol.descripcion ?? '',
       permisos: rol.permisos
-        ? permisos.filter((permiso) => rol.permisos?.includes(permiso.clave)).map((permiso) => permiso.id)
+        ? permisos
+            .filter((permiso) => rol.permisos?.includes(permiso.clave))
+            .map((permiso) => permiso.id)
         : [],
     })
     setFallo('')
@@ -152,7 +231,13 @@ export function RolesManager() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar rol" />
-        {tienePermiso('roles.crear') && <Button onClick={abrirNuevo}>Nuevo rol</Button>}
+
+        {tienePermiso('roles.crear') && (
+          <Button onClick={abrirNuevo}>
+            <Plus size={14} />
+            Nuevo rol
+          </Button>
+        )}
       </div>
 
       {aviso && <Alert tono="exito">{aviso}</Alert>}
@@ -160,52 +245,21 @@ export function RolesManager() {
       {fallo && !modalAbierta && <Alert tono="error">{fallo}</Alert>}
 
       {cargando ? (
-        <div className="rounded-lg bg-card p-10 text-center text-sm text-muted-foreground">Cargando roles...</div>
-      ) : roles.length === 0 ? (
-        <EmptyState titulo="Sin roles" descripcion="No se registran roles para la búsqueda actual." />
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Rol</th>
-                <th className="px-4 py-3">Clave</th>
-                <th className="px-4 py-3">Permisos</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {roles.map((rol) => (
-                <tr key={rol.id} className="hover:bg-muted/40">
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-foreground">{rol.nombre}</span>
-                    {rol.es_sistema && <span className="ml-2"><Badge tono="primario">Sistema</Badge></span>}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-secondary-700">{rol.clave}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{rol.permisos?.length ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <Badge tono={rol.activo ? 'exito' : 'neutro'}>{rol.activo ? 'Activo' : 'Inactivo'}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      {tienePermiso('roles.editar') && (
-                        <Button variante="contorno" tamano="pequeno" onClick={() => abrirEdicion(rol)}>
-                          Editar
-                        </Button>
-                      )}
-                      {tienePermiso('roles.desactivar') && rol.activo && !rol.es_sistema && (
-                        <Button variante="peligro" tamano="pequeno" onClick={() => setADesactivar(rol)}>
-                          Desactivar
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="rounded-xl border border-line bg-white p-10 text-center text-[11px] text-muted">
+          Cargando roles...
         </div>
+      ) : roles.length === 0 ? (
+        <EmptyState
+          titulo="Sin roles"
+          descripcion="No se registran roles para la búsqueda actual."
+        />
+      ) : (
+        <Tabla
+          columnas={columnas}
+          datos={roles}
+          obtenerClave={(rol) => rol.id}
+          mensajeVacio="No se registran roles para la búsqueda actual."
+        />
       )}
 
       {modalAbierta && (
@@ -216,6 +270,7 @@ export function RolesManager() {
         >
           <form onSubmit={(evento) => void guardar(evento)} className="space-y-4">
             {fallo && <Alert tono="error">{fallo}</Alert>}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 etiqueta="Clave"
@@ -232,33 +287,56 @@ export function RolesManager() {
                 required
               />
             </div>
+
             <Textarea
               etiqueta="Descripción"
               value={formulario.descripcion}
-              onChange={(evento) => setFormulario({ ...formulario, descripcion: evento.target.value })}
+              onChange={(evento) =>
+                setFormulario({ ...formulario, descripcion: evento.target.value })
+              }
               rows={2}
               disabled={bloqueado}
             />
-            <fieldset disabled={bloqueado} className="rounded-lg border border-border p-4">
-              <legend className="px-2 text-sm font-medium text-foreground">Permisos</legend>
-              <div className="grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
-                {permisos.map((permiso) => (
-                  <label key={permiso.id} className="flex items-start gap-2 text-sm text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={formulario.permisos.includes(permiso.id)}
-                      onChange={() => alternarPermiso(permiso.id)}
-                      className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
-                    />
-                    <span>
-                      <span className="font-medium">{permiso.nombre}</span>
-                      <span className="block text-xs text-muted-foreground">{permiso.modulo}</span>
-                    </span>
-                  </label>
+
+            <fieldset disabled={bloqueado} className="rounded-lg border border-line bg-app/50 p-4">
+              <legend className="px-2 text-[11px] font-semibold text-ink-soft">
+                Permisos · {formulario.permisos.length} seleccionados
+              </legend>
+
+              <div className="app-scroll max-h-60 space-y-4 overflow-y-auto pr-1">
+                {permisosPorModulo.map(([modulo, lista]) => (
+                  <div key={modulo}>
+                    <p className="mb-2 text-[9px] font-bold tracking-[0.12em] text-brand-700 uppercase">
+                      {modulo}
+                    </p>
+
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {lista.map((permiso) => (
+                        <label
+                          key={permiso.id}
+                          className="flex cursor-pointer items-start gap-2 rounded-md bg-white px-2.5 py-2 text-[11px] text-ink-soft transition hover:bg-brand-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formulario.permisos.includes(permiso.id)}
+                            onChange={() => alternarPermiso(permiso.id)}
+                            className="mt-0.5 size-3.5 rounded border-line-strong accent-brand-700"
+                          />
+                          <span className="min-w-0">
+                            <span className="block font-medium">{permiso.nombre}</span>
+                            <span className="block truncate font-mono text-[9px] text-muted">
+                              {permiso.clave}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </fieldset>
-            <div className="flex justify-end gap-2 border-t border-border pt-4">
+
+            <div className="flex justify-end gap-2 border-t border-line pt-4">
               <Button variante="contorno" onClick={() => setModalAbierta(false)}>
                 Cancelar
               </Button>

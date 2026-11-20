@@ -2,358 +2,92 @@
 
 @import "tailwindcss";
 
-:root {
-  --font-body: 'Outfit', sans-serif;
+@theme {
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 
-  /* Paleta principal: azul profundo */
-  --primary-50: #e3effe;
-  --primary-100: #c0ddfc;
-  --primary-200: #6fbdfa;
-  --primary-300: #2e9bdc;
-  --primary-400: #2178ab;
-  --primary-500: #16577e;
-  --primary-600: #0b3954;
-  --primary-700: #072d43;
-  --primary-800: #042031;
-  --primary-900: #021522;
-  --primary-950: #010c16;
+  /* Azul institucional */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dcebfb;
+  --color-brand-200: #bfd9f3;
+  --color-brand-300: #93bfe8;
+  --color-brand-400: #5b9fd8;
+  --color-brand-500: #2e82c4;
+  --color-brand-600: #0874b9;
+  --color-brand-700: #006ba8;
+  --color-brand-800: #07588c;
+  --color-brand-900: #123b60;
+  --color-brand-950: #0b2a46;
 
-  /* Paleta secundaria: turquesa */
-  --secondary-50: #e6f5f6;
-  --secondary-100: #ccebed;
-  --secondary-200: #99d6db;
-  --secondary-300: #66c2c8;
-  --secondary-400: #33aeb6;
-  --secondary-500: #087e8b;
-  --secondary-600: #076b76;
-  --secondary-700: #065660;
-  --secondary-800: #04414a;
-  --secondary-900: #032b33;
-  --secondary-950: #02171b;
+  /* Superficies y texto */
+  --color-app: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-line: #e7edf5;
+  --color-line-strong: #d7e2ef;
+  --color-ink: #163451;
+  --color-ink-soft: #25354a;
+  --color-muted: #68788a;
+  --color-muted-soft: #94a3b8;
 
-  /* Neutrales basados en #F5F5F5 y #1F2937 */
-  --neutral-50: #ffffff;
-  --neutral-100: #f5f5f5;
-  --neutral-200: #e5e7eb;
-  --neutral-300: #d1d5db;
-  --neutral-400: #9ca3af;
-  --neutral-500: #6b7280;
-  --neutral-600: #4b5563;
-  --neutral-700: #374151;
-  --neutral-800: #1f2937;
-  --neutral-900: #17212e;
-  --neutral-950: #0d141d;
+  /* Estados */
+  --color-success: #16a34a;
+  --color-success-soft: #e5f9ed;
+  --color-warning: #a4510a;
+  --color-warning-soft: #fff4d6;
+  --color-danger: #dc2626;
+  --color-danger-strong: #b42328;
+  --color-danger-soft: #ffe9ea;
+  --color-info-soft: #eff5ff;
 
-  /* Colores de estado */
-  --success-light: #22c55e;
-  --success-dark: #4ade80;
-  --warning-light: #f59e0b;
-  --warning-dark: #fbbf24;
-  --error-light: #ef4444;
-  --error-dark: #f87171;
-  --info-light: #2e9bdc;
-  --info-dark: #6fbdfa;
-
-  /* Roles de color */
-  --primary: var(--primary-600);
-  --primary-foreground: #ffffff;
-
-  --secondary: var(--secondary-500);
-  --secondary-foreground: #ffffff;
-
-  --background: #f5f5f5;
-  --foreground: #1f2937;
-
-  --muted: var(--neutral-100);
-  --muted-foreground: var(--neutral-600);
-
-  --accent: #bfd7ea;
-  --accent-foreground: var(--primary-900);
-
-  --border: var(--neutral-200);
-  --input: var(--neutral-300);
-  --ring: var(--primary-500);
-
-  --card: #ffffff;
-  --card-foreground: #1f2937;
-
-  --popover: #ffffff;
-  --popover-foreground: #1f2937;
-
-  --success: var(--success-light);
-  --success-foreground: #ffffff;
-  --warning: var(--warning-light);
-  --warning-foreground: #1f2937;
-  --error: var(--error-light);
-  --error-foreground: #ffffff;
-  --info: var(--info-light);
-  --info-foreground: #ffffff;
-
-  --footer-bg: var(--primary-800);
-  --footer-text: var(--primary-50);
-
-  --glass-bg: color-mix(in srgb, var(--background), transparent 20%);
-  --glass-border: color-mix(in srgb, var(--foreground), transparent 90%);
-
-  --shadow-color: 220 3% 15%;
-  --shadow-strength: 1%;
-
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 0.75rem;
-  --spacing-lg: 1rem;
-  --spacing-xl: 1.25rem;
-  --spacing-2xl: 1.5rem;
-  --spacing-3xl: 2rem;
-
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
-
-  --font-weight-light: 300;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-
-  --radius-sm: 0.25rem;
+  /* Radios */
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-full: 9999px;
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius-xl: 0.875rem;
 }
 
-.dark {
-  --primary: var(--primary-400);
-  --primary-foreground: var(--primary-950);
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-  --secondary: var(--secondary-400);
-  --secondary-foreground: var(--secondary-950);
+  body {
+    margin: 0;
+    background-color: var(--color-app);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
 
-  --background: var(--neutral-950);
-  --foreground: var(--neutral-50);
+  #root {
+    min-height: 100svh;
+  }
 
-  --muted: var(--neutral-900);
-  --muted-foreground: var(--neutral-400);
-
-  --accent: var(--primary-900);
-  --accent-foreground: var(--primary-100);
-
-  --border: var(--neutral-800);
-  --input: var(--neutral-700);
-  --ring: var(--primary-400);
-
-  --card: var(--neutral-900);
-  --card-foreground: var(--neutral-50);
-
-  --popover: var(--neutral-900);
-  --popover-foreground: var(--neutral-50);
-
-  --glass-bg: color-mix(in srgb, var(--background), transparent 40%);
-  --glass-border: color-mix(in srgb, var(--foreground), transparent 90%);
-
-  --shadow-color: 0 0% 0%;
-  --shadow-strength: 25%;
-
-  --footer-bg: var(--neutral-950);
-  --footer-text: var(--primary-200);
-
-  --success: var(--success-dark);
-  --success-foreground: var(--neutral-950);
-  --warning: var(--warning-dark);
-  --warning-foreground: var(--neutral-950);
-  --error: var(--error-dark);
-  --error-foreground: var(--neutral-950);
-  --info: var(--info-dark);
-  --info-foreground: var(--neutral-950);
-}
-
-@theme {
-  --font-sans: var(--font-body);
-
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary-50: var(--primary-50);
-  --color-primary-100: var(--primary-100);
-  --color-primary-200: var(--primary-200);
-  --color-primary-300: var(--primary-300);
-  --color-primary-400: var(--primary-400);
-  --color-primary-500: var(--primary-500);
-  --color-primary-600: var(--primary-600);
-  --color-primary-700: var(--primary-700);
-  --color-primary-800: var(--primary-800);
-  --color-primary-900: var(--primary-900);
-  --color-primary-950: var(--primary-950);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary-50: var(--secondary-50);
-  --color-secondary-100: var(--secondary-100);
-  --color-secondary-200: var(--secondary-200);
-  --color-secondary-300: var(--secondary-300);
-  --color-secondary-400: var(--secondary-400);
-  --color-secondary-500: var(--secondary-500);
-  --color-secondary-600: var(--secondary-600);
-  --color-secondary-700: var(--secondary-700);
-  --color-secondary-800: var(--secondary-800);
-  --color-secondary-900: var(--secondary-900);
-  --color-secondary-950: var(--secondary-950);
-
-  --color-neutral-50: var(--neutral-50);
-  --color-neutral-100: var(--neutral-100);
-  --color-neutral-200: var(--neutral-200);
-  --color-neutral-300: var(--neutral-300);
-  --color-neutral-400: var(--neutral-400);
-  --color-neutral-500: var(--neutral-500);
-  --color-neutral-600: var(--neutral-600);
-  --color-neutral-700: var(--neutral-700);
-  --color-neutral-800: var(--neutral-800);
-  --color-neutral-900: var(--neutral-900);
-  --color-neutral-950: var(--neutral-950);
-
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--error);
-  --color-destructive-foreground: var(--error-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-error: var(--error);
-  --color-error-foreground: var(--error-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-
-  --font-size-xs: var(--font-size-xs);
-  --font-size-sm: var(--font-size-sm);
-  --font-size-base: var(--font-size-base);
-  --font-size-lg: var(--font-size-lg);
-  --font-size-xl: var(--font-size-xl);
-  --font-size-2xl: var(--font-size-2xl);
-  --font-size-3xl: var(--font-size-3xl);
-  --font-size-4xl: var(--font-size-4xl);
-
-  --font-weight-light: var(--font-weight-light);
-  --font-weight-normal: var(--font-weight-normal);
-  --font-weight-medium: var(--font-weight-medium);
-  --font-weight-semibold: var(--font-weight-semibold);
-  --font-weight-bold: var(--font-weight-bold);
+  ::selection {
+    background-color: var(--color-brand-200);
+    color: var(--color-brand-950);
+  }
 }
 
 @layer utilities {
-  .glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-  }
-
-  .glass-card {
-    background: color-mix(in srgb, var(--card), transparent 5%);
-    backdrop-filter: blur(8px);
-    border: 1px solid color-mix(in srgb, var(--border), transparent 50%);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
-  }
-
-  .gradient-product-title {
-    background: linear-gradient(to top,
-      color-mix(in srgb, var(--primary), transparent 0%) 0%,
-      color-mix(in srgb, var(--primary), transparent 15%) 15%,
-      color-mix(in srgb, var(--primary), transparent 40%) 30%,
-      color-mix(in srgb, var(--primary), transparent 65%) 45%,
-      color-mix(in srgb, var(--primary), transparent 85%) 60%,
-      color-mix(in srgb, var(--primary), transparent 95%) 75%,
-      transparent 100%);
-  }
-
-  .mesh-gradient {
-    background-color: var(--background);
-    background-image:
-      radial-gradient(at 0% 0%, color-mix(in srgb, var(--primary-100), transparent 70%) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, color-mix(in srgb, var(--secondary-100), transparent 70%) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, color-mix(in srgb, var(--primary-100), transparent 70%) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, color-mix(in srgb, var(--secondary-100), transparent 70%) 0px, transparent 50%);
-  }
-
-  .blob {
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    background: linear-gradient(135deg, var(--primary-300) 0%, var(--secondary-300) 100%);
-    filter: blur(80px);
-    border-radius: 50%;
-    z-index: -1;
-    opacity: 0.15;
-    animation: move 20s infinite alternate;
-  }
-
-  @keyframes move {
-    from { transform: translate(-10%, -10%) scale(1); }
-    to { transform: translate(20%, 20%) scale(1.2); }
-  }
-
-  .premium-input {
-    @apply bg-background/50 backdrop-blur-sm border-neutral-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300;
-  }
-
-  .gradient-product-title-hover {
-    background: linear-gradient(to top,
-      color-mix(in srgb, var(--primary), transparent 0%) 0%,
-      color-mix(in srgb, var(--primary), transparent 10%) 15%,
-      color-mix(in srgb, var(--primary), transparent 25%) 30%,
-      color-mix(in srgb, var(--primary), transparent 45%) 45%,
-      color-mix(in srgb, var(--primary), transparent 65%) 60%,
-      color-mix(in srgb, var(--primary), transparent 92%) 75%,
-      transparent 100%);
-  }
-
-  .premium-scroll::-webkit-scrollbar {
+  .app-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
-  .premium-scroll::-webkit-scrollbar-track {
+  .app-scroll::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .premium-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--muted-foreground);
-    border-radius: 20px;
-    opacity: 0.5;
+  .app-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--color-line-strong);
   }
-}
 
-body {
-  margin: 0;
-  font-family: var(--font-body);
-}
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 
-#root {
-  min-height: 100svh;
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
 }

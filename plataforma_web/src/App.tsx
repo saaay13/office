@@ -19,7 +19,7 @@ function RutaPrivada() {
 
   if (cargando) {
     return (
-      <div className="grid min-h-svh place-items-center bg-background">
+      <div className="grid min-h-svh place-items-center bg-app">
         <Spinner />
       </div>
     )

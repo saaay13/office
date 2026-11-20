@@ -70,30 +70,61 @@ class User extends Authenticatable
         return in_array($clave, $claves, true);
     }
 
-    public function esAdmin(): bool
+    public function esPersonal(): bool
     {
-        return $this->rol?->clave === Permisos::ROL_ADMIN;
+        return $this->rol?->clave === Permisos::ROL_PERSONAL;
     }
 
-    public function esJefeArea(): bool
+    public function esEncargado(): bool
     {
-        return $this->rol?->clave === Permisos::ROL_JEFE;
+        return $this->rol?->clave === Permisos::ROL_ENCARGADO;
     }
 
-    public function esDirectivo(): bool
+    public function esAdminVista(): bool
     {
-        return $this->rol?->clave === Permisos::ROL_DIRECTIVO;
+        return $this->rol?->clave === Permisos::ROL_ADMIN_VISTA;
     }
 
-    public function esAuditor(): bool
+    public function esAdminGeneral(): bool
     {
-        return $this->rol?->clave === Permisos::ROL_AUDITOR;
+        return $this->rol?->clave === Permisos::ROL_ADMIN_GENERAL;
+    }
+
+    public function areasAsignadas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            InstanciaCoordinacion::class,
+            'user_areas',
+            'user_id',
+            'area_id',
+        )->wherePivot('activo', true);
+    }
+
+    /**
+     * Areas adicionales asignadas. Lista vacía = sin asignaciones activas.
+     *
+     * @return list<int>
+     */
+    public function areasAsignadasIds(): array
+    {
+        return $this->areasAsignadas()
+            ->pluck('instancias_coordinacion.id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     public function veArea(InstanciaCoordinacion $area): bool
     {
-        if ($this->esAdmin() || $this->esDirectivo() || $this->esAuditor()) {
+        if ($this->esAdminGeneral()) {
             return true;
+        }
+
+        if ($this->esAdminVista()) {
+            $ids = $this->areasAsignadasIds();
+
+            return $ids === []
+                ? (int) $this->area_id === (int) $area->id
+                : in_array((int) $area->id, $ids, true);
         }
 
         $propia = $this->area;
@@ -106,7 +137,8 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->esJefeArea() && str_starts_with((string) $area->ruta, (string) $propia->ruta);
+        return $this->esEncargado()
+            && str_starts_with((string) $area->ruta, (string) $propia->ruta);
     }
 
     public function sendPasswordResetNotification($token): void

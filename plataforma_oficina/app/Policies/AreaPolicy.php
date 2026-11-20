@@ -25,19 +25,11 @@ class AreaPolicy
 
     public function update(User $user, InstanciaCoordinacion $area): bool
     {
-        if (! $user->tienePermiso(Permisos::AREAS_EDITAR)) {
-            return false;
-        }
-
-        if ($user->esAdmin()) {
-            return true;
-        }
-
-        return $user->esJefeArea() && $area->id === $user->area_id;
+        return $user->tienePermiso(Permisos::AREAS_EDITAR) && $user->veArea($area);
     }
 
     public function delete(User $user, InstanciaCoordinacion $area): bool
     {
-        return $user->tienePermiso(Permisos::AREAS_DESACTIVAR) && $user->esAdmin();
+        return $user->tienePermiso(Permisos::AREAS_DESACTIVAR) && $user->veArea($area);
     }
 }

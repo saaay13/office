@@ -2,18 +2,21 @@ import type { ReactNode } from 'react'
 import type { Tono } from './Badge'
 
 const estilos: Record<Tono, string> = {
-  neutro: 'border-border bg-muted text-foreground',
-  primario: 'border-primary-200 bg-primary-50 text-primary-800',
-  secundario: 'border-secondary-200 bg-secondary-50 text-secondary-800',
-  exito: 'border-success/40 bg-success/10 text-success-dark',
-  advertencia: 'border-warning/40 bg-warning/15 text-warning-dark',
-  error: 'border-error/40 bg-error/10 text-error',
-  info: 'border-info/40 bg-info/10 text-primary-700',
+  neutro: 'border-line bg-app text-ink-soft',
+  primario: 'border-brand-200 bg-brand-50 text-brand-800',
+  secundario: 'border-brand-200 bg-brand-100 text-brand-800',
+  exito: 'border-success/30 bg-success-soft text-[#166534]',
+  advertencia: 'border-warning/30 bg-warning-soft text-warning',
+  error: 'border-danger/30 bg-danger-soft text-danger-strong',
+  info: 'border-brand-200 bg-info-soft text-brand-800',
 }
 
 export function Alert({ tono = 'info', children }: { tono?: Tono; children: ReactNode }) {
   return (
-    <div role="status" className={`rounded-md border px-4 py-3 text-sm ${estilos[tono]}`}>
+    <div
+      role="status"
+      className={`rounded-lg border px-3.5 py-2.5 text-[11px] font-medium ${estilos[tono]}`}
+    >
       {children}
     </div>
   )
