@@ -2,8 +2,10 @@ import {
   BriefcaseBusiness,
   Building2,
   CalendarDays,
+  Database,
   FolderOpen,
   KeyRound,
+  Layers,
   LayoutDashboard,
   Settings2,
   ShieldCheck,
@@ -28,6 +30,8 @@ export type EnlaceNavegacion = {
   icono: LucideIcon
   permisos?: string[]
   roles?: RolClave[]
+  subenlaces?: EnlaceNavegacion[]
+  requiereModo?: boolean
 }
 
 export type GrupoNavegacion = {
@@ -54,9 +58,34 @@ export const PERMISOS_CONFIGURACION: PermisoConfiguracion[] = [
   { clave: 'configuraciones.editar', nombre: 'Editar configuraciones', creacion: false },
 ]
 
+export const CLAVES_CONFIGURACION = PERMISOS_CONFIGURACION.map((permiso) => permiso.clave)
+
 export const CLAVES_CONFIGURACION_CREACION = PERMISOS_CONFIGURACION.filter(
   (permiso) => permiso.creacion,
 ).map((permiso) => permiso.clave)
+
+export const CLAVES_TIPOS_REGISTRO = ['tipos_registro.crear', 'tipos_registro.editar']
+
+export const CLAVES_CATALOGOS = ['catalogos.crear', 'catalogos.editar']
+
+export const OPCIONES_CONFIGURACION: EnlaceNavegacion[] = [
+  {
+    ruta: '/administrar-mi-area/tipos-de-registro',
+    texto: 'Tipos de registro',
+    descripcion: 'Estructura de los registros del área',
+    icono: Layers,
+    permisos: CLAVES_TIPOS_REGISTRO,
+    requiereModo: true,
+  },
+  {
+    ruta: '/administrar-mi-area/catalogos',
+    texto: 'Catálogos',
+    descripcion: 'Listas de valores por área',
+    icono: Database,
+    permisos: CLAVES_CATALOGOS,
+    requiereModo: true,
+  },
+]
 
 const administradores = [ROLES.adminGeneral, ROLES.encargado] as RolClave[]
 
@@ -90,6 +119,7 @@ export const GRUPOS_NAVEGACION: GrupoNavegacion[] = [
         descripcion: 'Configuración operativa del área',
         icono: Settings2,
         permisos: CLAVES_CONFIGURACION_CREACION,
+        subenlaces: OPCIONES_CONFIGURACION,
       },
       {
         ruta: '/perfil',
@@ -147,10 +177,9 @@ export const GRUPOS_NAVEGACION: GrupoNavegacion[] = [
 ]
 
 export const SECCIONES: Record<string, string> = Object.fromEntries(
-  GRUPOS_NAVEGACION.flatMap((grupo) => grupo.enlaces).map((enlace) => [
-    enlace.ruta,
-    enlace.texto,
-  ]),
+  GRUPOS_NAVEGACION.flatMap((grupo) =>
+    grupo.enlaces.flatMap((enlace) => [enlace, ...(enlace.subenlaces ?? [])]),
+  ).map((enlace) => [enlace.ruta, enlace.texto]),
 )
 
 export function enlaceVisible(
@@ -165,4 +194,8 @@ export function enlaceVisible(
     enlace.permisos === undefined || enlace.permisos.some(contexto.tienePermiso)
 
   return permiteRol && permitePermiso
+}
+
+export function puedeConfigurar(tienePermiso: (clave: string) => boolean): boolean {
+  return CLAVES_CONFIGURACION.some(tienePermiso)
 }

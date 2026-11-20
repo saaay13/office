@@ -1,11 +1,17 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { Spinner } from './components/atoms/Button'
 import { AppLayout } from './components/templates/AppLayout'
-import { CLAVES_CONFIGURACION_CREACION } from './config/navegacion'
+import {
+  CLAVES_CATALOGOS,
+  CLAVES_CONFIGURACION_CREACION,
+  CLAVES_TIPOS_REGISTRO,
+} from './config/navegacion'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ConfiguracionProvider, useConfiguracion } from './context/ConfiguracionContext'
 import { AdministrarMiAreaPage } from './pages/AdministrarMiAreaPage'
 import { AreasPage } from './pages/AreasPage'
 import { CargosPage } from './pages/CargosPage'
+import { CatalogosPage } from './pages/CatalogosPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -15,6 +21,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { ReunionesPage } from './pages/ReunionesPage'
 import { RolesPage } from './pages/RolesPage'
 import { SeccionesTrabajoPage } from './pages/SeccionesTrabajoPage'
+import { TiposRegistroPage } from './pages/TiposRegistroPage'
 import { UsuariosPage } from './pages/UsuariosPage'
 
 function RutaPrivada() {
@@ -52,6 +59,17 @@ function RutaConAcceso({ permisos }: { permisos: string[] }) {
   )
 }
 
+function RutaConModoConfiguracion({ permisos }: { permisos: string[] }) {
+  const { tienePermiso } = useAuth()
+  const { modoActivo } = useConfiguracion()
+
+  return modoActivo && permisos.some((permiso) => tienePermiso(permiso)) ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/administrar-mi-area" replace />
+  )
+}
+
 function Enrutador() {
   return (
     <Routes>
@@ -72,6 +90,15 @@ function Enrutador() {
           </Route>
           <Route element={<RutaConAcceso permisos={CLAVES_CONFIGURACION_CREACION} />}>
             <Route path="administrar-mi-area" element={<AdministrarMiAreaPage />} />
+          </Route>
+          <Route element={<RutaConModoConfiguracion permisos={CLAVES_TIPOS_REGISTRO} />}>
+            <Route
+              path="administrar-mi-area/tipos-de-registro"
+              element={<TiposRegistroPage />}
+            />
+          </Route>
+          <Route element={<RutaConModoConfiguracion permisos={CLAVES_CATALOGOS} />}>
+            <Route path="administrar-mi-area/catalogos" element={<CatalogosPage />} />
           </Route>
 
           <Route element={<RutaConPermiso permiso="areas.ver" />}>
@@ -101,7 +128,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Enrutador />
+        <ConfiguracionProvider>
+          <Enrutador />
+        </ConfiguracionProvider>
       </AuthProvider>
     </BrowserRouter>
   )

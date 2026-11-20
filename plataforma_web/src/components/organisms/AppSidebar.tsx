@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { Building2, ShieldCheck } from 'lucide-react'
 import { GRUPOS_NAVEGACION, enlaceVisible } from '../../config/navegacion'
 import { useAuth } from '../../context/AuthContext'
+import { useConfiguracion } from '../../context/ConfiguracionContext'
 
 type Props = {
   abierto: boolean
@@ -10,6 +11,7 @@ type Props = {
 
 export function AppSidebar({ abierto, onCerrar }: Props) {
   const { usuario, tienePermiso } = useAuth()
+  const { modoActivo } = useConfiguracion()
   const contexto = { rol: usuario?.rol?.clave ?? null, tienePermiso }
 
   const iniciales =
@@ -58,24 +60,55 @@ export function AppSidebar({ abierto, onCerrar }: Props) {
                 </p>
 
                 <div className="space-y-1">
-                  {visibles.map((enlace) => (
-                    <NavLink
-                      key={enlace.ruta}
-                      to={enlace.ruta}
-                      end={enlace.ruta === '/'}
-                      onClick={onCerrar}
-                      className={({ isActive }) =>
-                        `flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[11px] font-medium transition ${
-                          isActive
-                            ? 'bg-brand-700 text-white shadow-sm'
-                            : 'text-blue-100/75 hover:bg-white/10 hover:text-white'
-                        }`
-                      }
-                    >
-                      <enlace.icono size={15} aria-hidden="true" />
-                      {enlace.texto}
-                    </NavLink>
-                  ))}
+                  {visibles.map((enlace) => {
+                    const subenlaces = (enlace.subenlaces ?? []).filter(
+                      (subenlace) =>
+                        enlaceVisible(subenlace, contexto) &&
+                        (!subenlace.requiereModo || modoActivo),
+                    )
+
+                    return (
+                      <div key={enlace.ruta}>
+                        <NavLink
+                          to={enlace.ruta}
+                          end={enlace.ruta === '/'}
+                          onClick={onCerrar}
+                          className={({ isActive }) =>
+                            `flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[11px] font-medium transition ${
+                              isActive
+                                ? 'bg-brand-700 text-white shadow-sm'
+                                : 'text-blue-100/75 hover:bg-white/10 hover:text-white'
+                            }`
+                          }
+                        >
+                          <enlace.icono size={15} aria-hidden="true" />
+                          {enlace.texto}
+                        </NavLink>
+
+                        {subenlaces.length > 0 && (
+                          <div className="ml-4 mt-1 space-y-1 border-l border-white/15 pl-2">
+                            {subenlaces.map((subenlace) => (
+                              <NavLink
+                                key={subenlace.ruta}
+                                to={subenlace.ruta}
+                                onClick={onCerrar}
+                                className={({ isActive }) =>
+                                  `flex h-7 items-center gap-2 rounded-md px-2 text-[10px] transition ${
+                                    isActive
+                                      ? 'bg-brand-800 text-white'
+                                      : 'text-blue-100/60 hover:bg-white/10 hover:text-white'
+                                  }`
+                                }
+                              >
+                                <subenlace.icono size={13} aria-hidden="true" />
+                                {subenlace.texto}
+                              </NavLink>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )
