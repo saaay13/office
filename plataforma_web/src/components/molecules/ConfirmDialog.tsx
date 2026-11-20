@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { Button } from '../atoms/Button'
+import { Button } from '../atoms'
 
 type Props = {
   titulo: string

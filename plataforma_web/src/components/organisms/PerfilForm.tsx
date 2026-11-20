@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Clock, KeyRound, ShieldCheck } from 'lucide-react'
-import { Alert } from '../atoms/Alert'
-import { Badge } from '../atoms/Badge'
-import { Button } from '../atoms/Button'
-import { Card } from '../atoms/Card'
-import { Input } from '../atoms/Input'
+import { Alert, Badge, Button, Card, Input } from '../atoms'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../services/api'
 import { erroresDeCampo, mensajeDeError } from '../../services/errores'
@@ -100,8 +96,8 @@ export function PerfilForm() {
               {usuario.ultimo_acceso_at === null
                 ? '—'
                 : new Date(usuario.ultimo_acceso_at).toLocaleString('es-BO', {
-                    timeZone: 'America/La_Paz',
-                  })}
+                  timeZone: 'America/La_Paz',
+                })}
             </dd>
           </div>
         </dl>

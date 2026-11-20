@@ -1,10 +1,7 @@
 import { useMemo, useState } from 'react'
 import { KeyRound } from 'lucide-react'
-import { Alert } from '../atoms/Alert'
-import { Badge } from '../atoms/Badge'
-import { EmptyState } from '../molecules/EmptyState'
-import { SearchField } from '../molecules/SearchField'
-import { SectionCard } from '../molecules/SectionCard'
+import { Alert,Badge } from '../atoms'
+import { EmptyState,SearchField,SectionCard  } from '../molecules'
 import { useRecurso } from '../../hooks/useRecurso'
 import type { Permiso } from '../../types'
 

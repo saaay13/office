@@ -2,21 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { Alert } from '../atoms/Alert'
-import { Badge } from '../atoms/Badge'
-import { Button } from '../atoms/Button'
-import { IconoAccion } from '../atoms/IconoAccion'
-import { Input, Select } from '../atoms/Input'
-import { ConfirmDialog } from '../molecules/ConfirmDialog'
-import { EmptyState } from '../molecules/EmptyState'
-import { FormModal } from '../molecules/FormModal'
-import { SearchField } from '../molecules/SearchField'
-import { Tabla } from '../molecules/Tabla'
+import { Alert,Badge,Button,IconoAccion,Input,Select } from '../atoms'
+import { ConfirmDialog,FormModal,SearchField,Tabla,EmptyState } from '../molecules'
 import type { ColumnaTabla } from '../molecules/Tabla'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
-import { mensajeDeError } from '../../services/errores'
+import { erroresDeCampo, mensajeDeError } from '../../services/errores'
 import type { Area, Cargo, Opciones, Rol, Usuario } from '../../types'
 
 type Formulario = {
@@ -47,7 +39,7 @@ const formularioVacio: Formulario = {
 
 export function UsuariosManager() {
   const { elementos, cargando, error, recargar } = useRecurso<Usuario>('usuarios')
-  const { usuario: usuarioActual } = useAuth()
+  const { usuario: usuarioActual, tienePermiso } = useAuth()
   const [parametros] = useSearchParams()
   const consulta = parametros.get('q') ?? ''
   const [opciones, setOpciones] = useState<Opciones | null>(null)
@@ -60,6 +52,7 @@ export function UsuariosManager() {
   const [desactivando, setDesactivando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [fallo, setFallo] = useState('')
+  const [errores, setErrores] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setBusqueda(consulta)
@@ -101,6 +94,28 @@ export function UsuariosManager() {
         (usuario.area?.nombre ?? '').toLowerCase().includes(texto),
     )
   }, [elementos, busqueda])
+
+  const cargosDisponibles = useMemo(() => {
+    const cargos = opciones?.cargos ?? []
+
+    if (editando === null || editando.cargo_id === null) {
+      return cargos
+    }
+
+    if (cargos.some((cargo) => cargo.id === editando.cargo_id)) {
+      return cargos
+    }
+
+    return [
+      ...cargos,
+      {
+        id: editando.cargo_id,
+        nombre: editando.cargo?.nombre ?? `Cargo #${editando.cargo_id}`,
+        descripcion: null,
+        activo: false,
+      },
+    ]
+  }, [editando, opciones])
 
   const columnas: ColumnaTabla<Usuario>[] = [
     {
@@ -148,27 +163,31 @@ export function UsuariosManager() {
       alineacion: 'derecha',
       celda: (usuario) => (
         <div className="flex justify-end gap-1.5">
-          <Button
-            variante="contorno"
-            tamano="icono"
-            onClick={() => abrirEdicion(usuario)}
-            aria-label={`Editar ${usuario.nombre_completo}`}
-            title={`Editar ${usuario.nombre_completo}`}
-          >
-            <IconoAccion nombre="editar" />
-          </Button>
-
-          {usuario.activo && usuario.id !== usuarioActual?.id && (
+          {tienePermiso('usuarios.editar') && (
             <Button
-              variante="peligroSuave"
+              variante="contorno"
               tamano="icono"
-              onClick={() => setADesactivar(usuario)}
-              aria-label={`Desactivar ${usuario.nombre_completo}`}
-              title={`Desactivar ${usuario.nombre_completo}`}
+              onClick={() => abrirEdicion(usuario)}
+              aria-label={`Editar ${usuario.nombre_completo}`}
+              title={`Editar ${usuario.nombre_completo}`}
             >
-              <IconoAccion nombre="desactivar" />
+              <IconoAccion nombre="editar" />
             </Button>
           )}
+
+          {tienePermiso('usuarios.desactivar') &&
+            usuario.activo &&
+            usuario.id !== usuarioActual?.id && (
+              <Button
+                variante="peligroSuave"
+                tamano="icono"
+                onClick={() => setADesactivar(usuario)}
+                aria-label={`Desactivar ${usuario.nombre_completo}`}
+                title={`Desactivar ${usuario.nombre_completo}`}
+              >
+                <IconoAccion nombre="desactivar" />
+              </Button>
+            )}
         </div>
       ),
     },
@@ -177,6 +196,7 @@ export function UsuariosManager() {
   function abrirNuevo(): void {
     setEditando(null)
     setFormulario(formularioVacio)
+    setErrores({})
     setFallo('')
     setModalAbierta(true)
   }
@@ -195,6 +215,7 @@ export function UsuariosManager() {
       password: '',
       password_confirmation: '',
     })
+    setErrores({})
     setFallo('')
     setModalAbierta(true)
   }
@@ -203,6 +224,7 @@ export function UsuariosManager() {
     evento.preventDefault()
     setGuardando(true)
     setFallo('')
+    setErrores({})
 
     const datos: Record<string, unknown> = {
       nombres: formulario.nombres.trim(),
@@ -234,6 +256,7 @@ export function UsuariosManager() {
       await recargar()
     } catch (falloGuardado) {
       setFallo(mensajeDeError(falloGuardado))
+      setErrores(erroresDeCampo(falloGuardado))
     } finally {
       setGuardando(false)
     }
@@ -264,10 +287,12 @@ export function UsuariosManager() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar usuario o área" />
 
-        <Button onClick={abrirNuevo}>
-          <Plus size={14} />
-          Nuevo usuario
-        </Button>
+        {tienePermiso('usuarios.crear') && (
+          <Button onClick={abrirNuevo}>
+            <Plus size={14} />
+            Nuevo usuario
+          </Button>
+        )}
       </div>
 
       {aviso && <Alert tono="exito">{aviso}</Alert>}
@@ -365,12 +390,13 @@ export function UsuariosManager() {
                 onChange={(evento) =>
                   setFormulario({ ...formulario, cargo_id: evento.target.value })
                 }
-                opciones={(opciones?.cargos ?? []).map((cargo: Cargo) => ({
+                opciones={cargosDisponibles.map((cargo: Cargo) => ({
                   valor: cargo.id,
-                  texto: cargo.nombre,
+                  texto: cargo.activo ? cargo.nombre : `${cargo.nombre} (inactivo)`,
                 }))}
                 permitirVacio
                 textoVacio="Sin cargo"
+                error={errores.cargo_id}
               />
               <Input
                 etiqueta={editando === null ? 'Contraseña' : 'Nueva contraseña (opcional)'}

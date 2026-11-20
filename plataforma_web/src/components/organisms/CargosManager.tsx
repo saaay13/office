@@ -1,31 +1,29 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Plus } from 'lucide-react'
-import { Alert } from '../atoms/Alert'
-import { Badge } from '../atoms/Badge'
-import { Button } from '../atoms/Button'
-import { IconoAccion } from '../atoms/IconoAccion'
-import { Input, Textarea } from '../atoms/Input'
-import { ConfirmDialog } from '../molecules/ConfirmDialog'
-import { EmptyState } from '../molecules/EmptyState'
-import { FormModal } from '../molecules/FormModal'
-import { SearchField } from '../molecules/SearchField'
-import { Tabla } from '../molecules/Tabla'
-import type { ColumnaTabla } from '../molecules/Tabla'
+import { Alert,Badge,Button,IconoAccion,Input,Select,Textarea } from '../atoms'
+import { ConfirmDialog,FormModal,SearchField,Tabla } from '../molecules'
+import type { ColumnaTabla } from '../molecules'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
-import { mensajeDeError } from '../../services/errores'
+import { erroresDeCampo, mensajeDeError } from '../../services/errores'
 import type { Cargo } from '../../types'
 
 type Formulario = { nombre: string; descripcion: string }
 
 const formularioVacio: Formulario = { nombre: '', descripcion: '' }
 
+const estados = [
+  { valor: 'activos', texto: 'Activos' },
+  { valor: 'inactivos', texto: 'Inactivos' },
+]
+
 export function CargosManager() {
-  const { elementos, cargando, error, recargar } = useRecurso<Cargo>('cargos')
   const { tienePermiso } = useAuth()
   const [busqueda, setBusqueda] = useState('')
+  const [busquedaAplicada, setBusquedaAplicada] = useState('')
+  const [estado, setEstado] = useState('')
   const [formulario, setFormulario] = useState<Formulario>(formularioVacio)
   const [editando, setEditando] = useState<Cargo | null>(null)
   const [modalAbierta, setModalAbierta] = useState(false)
@@ -34,12 +32,25 @@ export function CargosManager() {
   const [desactivando, setDesactivando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [fallo, setFallo] = useState('')
+  const [errores, setErrores] = useState<Record<string, string>>({})
 
-  const cargos = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase()
+  useEffect(() => {
+    const temporizador = globalThis.setTimeout(() => {
+      setBusquedaAplicada(busqueda.trim())
+    }, 250)
 
-    return elementos.filter((cargo) => texto === '' || cargo.nombre.toLowerCase().includes(texto))
-  }, [elementos, busqueda])
+    return () => globalThis.clearTimeout(temporizador)
+  }, [busqueda])
+
+  const filtros = useMemo(
+    () => ({
+      q: busquedaAplicada || undefined,
+      activo: estado === '' ? undefined : estado === 'activos',
+    }),
+    [busquedaAplicada, estado],
+  )
+
+  const { elementos, cargando, error, recargar } = useRecurso<Cargo>('cargos', filtros)
 
   const columnas: ColumnaTabla<Cargo>[] = [
     {
@@ -95,6 +106,7 @@ export function CargosManager() {
   function abrirNuevo(): void {
     setEditando(null)
     setFormulario(formularioVacio)
+    setErrores({})
     setFallo('')
     setModalAbierta(true)
   }
@@ -102,6 +114,7 @@ export function CargosManager() {
   function abrirEdicion(cargo: Cargo): void {
     setEditando(cargo)
     setFormulario({ nombre: cargo.nombre, descripcion: cargo.descripcion ?? '' })
+    setErrores({})
     setFallo('')
     setModalAbierta(true)
   }
@@ -110,8 +123,12 @@ export function CargosManager() {
     evento.preventDefault()
     setGuardando(true)
     setFallo('')
+    setErrores({})
 
-    const datos = { nombre: formulario.nombre.trim(), descripcion: formulario.descripcion.trim() || null }
+    const datos = {
+      nombre: formulario.nombre.trim(),
+      descripcion: formulario.descripcion.trim() || null,
+    }
 
     try {
       if (editando === null) {
@@ -126,6 +143,7 @@ export function CargosManager() {
       await recargar()
     } catch (falloGuardado) {
       setFallo(mensajeDeError(falloGuardado))
+      setErrores(erroresDeCampo(falloGuardado))
     } finally {
       setGuardando(false)
     }
@@ -154,7 +172,18 @@ export function CargosManager() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar cargo" />
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar cargo" />
+          <Select
+            etiqueta="Estado"
+            value={estado}
+            onChange={(evento) => setEstado(evento.target.value)}
+            opciones={estados}
+            permitirVacio
+            textoVacio="Todos los estados"
+            className="w-36"
+          />
+        </div>
 
         {tienePermiso('cargos.crear') && (
           <Button onClick={abrirNuevo}>
@@ -172,17 +201,12 @@ export function CargosManager() {
         <div className="rounded-xl border border-line bg-white p-10 text-center text-[11px] text-muted">
           Cargando cargos...
         </div>
-      ) : cargos.length === 0 ? (
-        <EmptyState
-          titulo="Sin cargos"
-          descripcion="No se registran cargos para la búsqueda actual."
-        />
       ) : (
         <Tabla
           columnas={columnas}
-          datos={cargos}
+          datos={elementos}
           obtenerClave={(cargo) => cargo.id}
-          mensajeVacio="No se registran cargos para la búsqueda actual."
+          mensajeVacio="No se registran cargos para los filtros actuales."
         />
       )}
 
@@ -199,6 +223,8 @@ export function CargosManager() {
               etiqueta="Nombre"
               value={formulario.nombre}
               onChange={(evento) => setFormulario({ ...formulario, nombre: evento.target.value })}
+              error={errores.nombre}
+              pista="El nombre debe ser único, sin distinguir mayúsculas."
               required
             />
 
@@ -208,6 +234,7 @@ export function CargosManager() {
               onChange={(evento) =>
                 setFormulario({ ...formulario, descripcion: evento.target.value })
               }
+              error={errores.descripcion}
               rows={3}
             />
 
@@ -226,7 +253,7 @@ export function CargosManager() {
       {aDesactivar && (
         <ConfirmDialog
           titulo="Desactivar cargo"
-          mensaje={`¿Desactivar el cargo "${aDesactivar.nombre}"?`}
+          mensaje={`¿Desactivar el cargo "${aDesactivar.nombre}"? Los usuarios que lo tengan asignado conservarán el cargo, pero no se podrá asignar a otros usuarios.`}
           confirmando={desactivando}
           onConfirmar={() => void desactivar()}
           onCancelar={() => setADesactivar(null)}

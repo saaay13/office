@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Badge } from '../atoms/Badge'
-import { Button } from '../atoms/Button'
-import { IconoAccion } from '../atoms/IconoAccion'
-import { EmptyState } from '../molecules/EmptyState'
+import { Badge,Button,IconoAccion  } from '../atoms'
+import { EmptyState } from '../molecules'
 import type { Area } from '../../types'
 
 type Nodo = Area & { hijos: Nodo[] }

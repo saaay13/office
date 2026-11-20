@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { AppHeader } from '../organisms/AppHeader'
-import { AppSidebar } from '../organisms/AppSidebar'
+import { AppHeader,AppSidebar } from '../organisms'
 
 export function AppLayout() {
   const [menuAbierto, setMenuAbierto] = useState(false)

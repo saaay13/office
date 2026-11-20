@@ -24,8 +24,8 @@ class GestionTest extends TestCase
     public function test_crea_y_desactiva_un_cargo(): void
     {
         $creado = $this->postJson('/api/cargos', [
-            'nombre' => 'Analista',
-            'descripcion' => 'Analista de procesos',
+            'nombre' => 'Coordinador de pruebas',
+            'descripcion' => 'Coordinador temporal para pruebas',
         ])->assertCreated()->json('data');
 
         $this->assertDatabaseHas('cargos', ['id' => $creado['id'], 'activo' => 1]);
