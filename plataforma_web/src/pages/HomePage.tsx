@@ -11,6 +11,7 @@ import {
   Clock,
   FolderOpen,
   KeyRound,
+  Settings2,
   ShieldCheck,
   UserRound,
   Users,
@@ -19,6 +20,7 @@ import { Alert } from '../components/atoms/Alert'
 import { Badge } from '../components/atoms/Badge'
 import { Spinner } from '../components/atoms/Button'
 import { GRUPOS_NAVEGACION, enlaceVisible } from '../config/navegacion'
+import { EmptyState } from '../components/molecules/EmptyState'
 import { SectionCard } from '../components/molecules/SectionCard'
 import { StatCard } from '../components/molecules/StatCard'
 import type { TonoIndicador } from '../components/molecules/StatCard'
@@ -313,13 +315,22 @@ export function HomePage() {
       .slice(0, 4)
   }, [usuarios])
 
-  const accesosVisibles = GRUPOS_NAVEGACION.flatMap((grupo) => grupo.enlaces).filter((enlace) =>
-    enlaceVisible(enlace, { rol: usuario?.rol?.clave ?? null, tienePermiso }),
+  const rolClave = usuario?.rol?.clave ?? ''
+
+  const accesosVisibles = GRUPOS_NAVEGACION.flatMap((grupo) => grupo.enlaces).filter(
+    (enlace) =>
+      enlace.ruta !== '/' &&
+      enlaceVisible(enlace, { rol: rolClave === '' ? null : rolClave, tienePermiso }),
   )
 
   const areaPrincipal = usuario?.area?.nombre ?? 'Sin área asignada'
   const rolPrincipal = usuario?.rol?.nombre ?? 'Sin rol asignado'
   const nombre = usuario?.nombres ?? 'Usuario'
+  const esGestor = rolClave === 'admin_general' || rolClave === 'encargado_area'
+  const esSoloLectura = rolClave === 'admin_vista'
+  const accionPrincipal = esGestor
+    ? { ruta: '/administrar-mi-area', texto: 'Administrar mi área', icono: Settings2 }
+    : { ruta: '/secciones-de-trabajo', texto: 'Secciones de trabajo', icono: FolderOpen }
 
   const areaLider = barras[0]
 
@@ -329,6 +340,12 @@ export function HomePage() {
       : areas !== null
         ? `La estructura cuenta con ${areasActivas.length} áreas visibles, de las cuales ${areasActivas.filter((area) => area.responsable).length} tienen responsable asignado.`
         : 'Consulte Mi perfil para revisar sus datos institucionales y seguridad de la cuenta.'
+
+  const mensajeRol = esSoloLectura
+    ? 'Acceso de consulta a las áreas asignadas. Las acciones de creación, edición y eliminación no están disponibles.'
+    : esGestor
+      ? resumen
+      : 'Registra y consulta las actividades de tu área desde las secciones de trabajo y la agenda de reuniones.'
 
   const fecha = new Intl.DateTimeFormat('es-BO', {
     weekday: 'long',
@@ -349,9 +366,12 @@ export function HomePage() {
 
           <div className="min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-2 text-[8px]">
-              <span className="font-bold tracking-[0.16em] text-brand-700">PANEL EJECUTIVO</span>
+              <span className="font-bold tracking-[0.16em] text-brand-700">PANEL DE CONTROL</span>
               <span className="text-muted-soft">•</span>
               <span className="text-muted">Vigencia {new Date().getFullYear()}</span>
+              <Badge tono={esSoloLectura ? 'advertencia' : 'primario'}>
+                {esSoloLectura ? 'Solo lectura' : rolPrincipal}
+              </Badge>
             </div>
 
             <h1 className="text-xl leading-tight font-semibold tracking-tight text-brand-950 sm:text-2xl">
@@ -372,37 +392,29 @@ export function HomePage() {
                 {fechaVisible}
               </span>
             </div>
+
+            <p className="mt-2 max-w-xl text-[10px] leading-relaxed text-brand-800">
+              {mensajeRol}
+            </p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
           <Link
-            to="/perfil"
+            to={accionPrincipal.ruta}
             className="flex h-8 items-center gap-1 rounded-md bg-brand-700 px-3 text-[10px] font-semibold text-white transition hover:bg-brand-800"
+          >
+            <accionPrincipal.icono size={12} />
+            {accionPrincipal.texto}
+          </Link>
+
+          <Link
+            to="/perfil"
+            className="flex h-8 items-center gap-1 rounded-md border border-brand-200 bg-white px-3 text-[10px] font-semibold text-brand-700 transition hover:bg-brand-50"
           >
             <UserRound size={12} />
             Mi perfil
           </Link>
-
-          {tienePermiso('usuarios.ver') && (
-            <Link
-              to="/usuarios"
-              className="flex h-8 items-center gap-1 rounded-md border border-brand-200 bg-white px-3 text-[10px] font-semibold text-brand-700 transition hover:bg-brand-50"
-            >
-              <Users size={12} />
-              Gestionar usuarios
-            </Link>
-          )}
-
-          {tienePermiso('areas.ver') && (
-            <Link
-              to="/areas"
-              className="flex h-8 items-center gap-1 rounded-md bg-[#e1eaf8] px-3 text-[10px] font-medium text-[#354a64] transition hover:bg-[#d3e1f3]"
-            >
-              <Building2 size={12} />
-              Ver áreas
-            </Link>
-          )}
         </div>
       </section>
 
@@ -415,7 +427,7 @@ export function HomePage() {
         <>
           {error && <Alert tono="error">{error}</Alert>}
 
-          {tarjetas.length > 0 && (
+          {esGestor && tarjetas.length > 0 && (
             <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {tarjetas.slice(0, 4).map((tarjeta) => (
                 <StatCard key={tarjeta.titulo} {...tarjeta} />
@@ -425,7 +437,64 @@ export function HomePage() {
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.8fr_0.85fr]">
             <div className="min-w-0 space-y-4">
-              {barras.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SectionCard
+                  titulo="Actividades pendientes"
+                  descripcion="Espacio para las tareas asignadas a tu área"
+                  icono={Activity}
+                >
+                  <EmptyState
+                    titulo="Sin actividades pendientes"
+                    descripcion="Las tareas asignadas aparecerán aquí cuando se habilite el módulo de registros."
+                    accion={
+                      tienePermiso('registros.ver') ? (
+                        <Link
+                          to="/secciones-de-trabajo"
+                          className="inline-flex h-7 items-center rounded-md bg-brand-50 px-2.5 text-[10px] font-semibold text-brand-700 transition hover:bg-brand-100"
+                        >
+                          Ver secciones de trabajo
+                        </Link>
+                      ) : undefined
+                    }
+                  />
+                </SectionCard>
+
+                <SectionCard
+                  titulo="Próximas reuniones"
+                  descripcion="Espacio para la agenda de reuniones del área"
+                  icono={CalendarDays}
+                >
+                  <EmptyState
+                    titulo="Aún no hay reuniones próximas"
+                    descripcion="Las reuniones programadas aparecerán aquí cuando se habilite el módulo."
+                    accion={
+                      tienePermiso('reuniones.ver') ? (
+                        <Link
+                          to="/reuniones"
+                          className="inline-flex h-7 items-center rounded-md bg-brand-50 px-2.5 text-[10px] font-semibold text-brand-700 transition hover:bg-brand-100"
+                        >
+                          Ver reuniones
+                        </Link>
+                      ) : undefined
+                    }
+                  />
+                </SectionCard>
+              </div>
+
+              {!esGestor && (
+                <SectionCard
+                  titulo="Indicadores del área"
+                  descripcion="Espacio para las métricas de productividad"
+                  icono={Activity}
+                >
+                  <EmptyState
+                    titulo="Aún no hay indicadores"
+                    descripcion="Las métricas aparecerán cuando el área tenga registros y reuniones."
+                  />
+                </SectionCard>
+              )}
+
+              {esGestor && barras.length > 0 && (
                 <SectionCard
                   titulo={mostrarActivos ? 'Usuarios por área' : 'Áreas por tipo'}
                   descripcion={
@@ -503,7 +572,7 @@ export function HomePage() {
                 </SectionCard>
               )}
 
-              {progresos.length > 0 && (
+              {esGestor && progresos.length > 0 && (
                 <SectionCard
                   titulo="Estado de la estructura"
                   descripcion="Indicadores de completitud de la configuración institucional"
@@ -591,7 +660,7 @@ export function HomePage() {
                 </dl>
               </SectionCard>
 
-              {usuarios !== null && (
+              {esGestor && usuarios !== null && (
                 <SectionCard
                   titulo="Últimos accesos"
                   descripcion="Actividad reciente del personal"

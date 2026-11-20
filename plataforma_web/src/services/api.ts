@@ -12,7 +12,7 @@ import type {
   Usuario,
 } from '../types'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api'
 const TOKEN_KEY = 'productividad.token'
 
 type CuerpoRespuesta = {
@@ -49,6 +49,10 @@ async function solicitar<T>(ruta: string, opciones: RequestInit = {}): Promise<T
 
   if (!cabeceras.has('Content-Type')) {
     cabeceras.set('Content-Type', 'application/json')
+  }
+
+  if (!cabeceras.has('Accept')) {
+    cabeceras.set('Accept', 'application/json')
   }
 
   const token = leerToken()
