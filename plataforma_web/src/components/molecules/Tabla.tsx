@@ -100,7 +100,7 @@ export function Tabla<T>({
               {datos.length === 0 && (
                 <tr>
                   <td colSpan={columnas.length}>
-                    <EstadoVacio mensaje={mensajeVacio} columnas={columnas.length} />
+                    <EstadoVacio mensaje={mensajeVacio} />
                   </td>
                 </tr>
               )}
@@ -147,7 +147,7 @@ export function Tabla<T>({
 
         {datos.length === 0 && (
           <div className="rounded-xl border border-line bg-white shadow-sm">
-            <EstadoVacio mensaje={mensajeVacio} columnas={columnas.length} />
+            <EstadoVacio mensaje={mensajeVacio} />
           </div>
         )}
       </div>

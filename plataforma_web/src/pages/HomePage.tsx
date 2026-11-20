@@ -18,6 +18,7 @@ import {
 import { Alert } from '../components/atoms/Alert'
 import { Badge } from '../components/atoms/Badge'
 import { Spinner } from '../components/atoms/Button'
+import { GRUPOS_NAVEGACION, enlaceVisible } from '../config/navegacion'
 import { SectionCard } from '../components/molecules/SectionCard'
 import { StatCard } from '../components/molecules/StatCard'
 import type { TonoIndicador } from '../components/molecules/StatCard'
@@ -39,58 +40,6 @@ type Barra = {
   total: number
   activos: number
 }
-
-type Acceso = {
-  ruta: string
-  texto: string
-  descripcion: string
-  icono: LucideIcon
-  permiso?: string
-}
-
-const accesos: Acceso[] = [
-  {
-    ruta: '/areas',
-    texto: 'Áreas',
-    descripcion: 'Estructura organizacional',
-    icono: Building2,
-    permiso: 'areas.ver',
-  },
-  {
-    ruta: '/cargos',
-    texto: 'Cargos',
-    descripcion: 'Catálogo institucional',
-    icono: BriefcaseBusiness,
-    permiso: 'cargos.ver',
-  },
-  {
-    ruta: '/roles',
-    texto: 'Roles',
-    descripcion: 'Perfiles de acceso',
-    icono: ShieldCheck,
-    permiso: 'roles.ver',
-  },
-  {
-    ruta: '/permisos',
-    texto: 'Permisos',
-    descripcion: 'Acciones del sistema',
-    icono: KeyRound,
-    permiso: 'permisos.ver',
-  },
-  {
-    ruta: '/usuarios',
-    texto: 'Usuarios',
-    descripcion: 'Cuentas y asignaciones',
-    icono: Users,
-    permiso: 'usuarios.ver',
-  },
-  {
-    ruta: '/perfil',
-    texto: 'Mi perfil',
-    descripcion: 'Datos y seguridad',
-    icono: UserRound,
-  },
-]
 
 function saludo(): string {
   const hora = new Date().getHours()
@@ -364,8 +313,8 @@ export function HomePage() {
       .slice(0, 4)
   }, [usuarios])
 
-  const accesosVisibles = accesos.filter(
-    (acceso) => !acceso.permiso || tienePermiso(acceso.permiso),
+  const accesosVisibles = GRUPOS_NAVEGACION.flatMap((grupo) => grupo.enlaces).filter((enlace) =>
+    enlaceVisible(enlace, { rol: usuario?.rol?.clave ?? null, tienePermiso }),
   )
 
   const areaPrincipal = usuario?.area?.nombre ?? 'Sin área asignada'

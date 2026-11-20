@@ -1,53 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import type { LucideIcon } from 'lucide-react'
-import {
-  BriefcaseBusiness,
-  Building2,
-  KeyRound,
-  LayoutDashboard,
-  ShieldCheck,
-  UserRound,
-  Users,
-} from 'lucide-react'
+import { Building2, ShieldCheck } from 'lucide-react'
+import { GRUPOS_NAVEGACION, enlaceVisible } from '../../config/navegacion'
 import { useAuth } from '../../context/AuthContext'
-
-type Enlace = {
-  ruta: string
-  texto: string
-  icono: LucideIcon
-  permiso?: string
-}
-
-type Grupo = {
-  titulo: string
-  enlaces: Enlace[]
-}
-
-const grupos: Grupo[] = [
-  {
-    titulo: 'Panel',
-    enlaces: [{ ruta: '/', texto: 'Inicio', icono: LayoutDashboard }],
-  },
-  {
-    titulo: 'Organización',
-    enlaces: [
-      { ruta: '/areas', texto: 'Áreas', icono: Building2, permiso: 'areas.ver' },
-      { ruta: '/cargos', texto: 'Cargos', icono: BriefcaseBusiness, permiso: 'cargos.ver' },
-    ],
-  },
-  {
-    titulo: 'Seguridad',
-    enlaces: [
-      { ruta: '/roles', texto: 'Roles', icono: ShieldCheck, permiso: 'roles.ver' },
-      { ruta: '/permisos', texto: 'Permisos', icono: KeyRound, permiso: 'permisos.ver' },
-      { ruta: '/usuarios', texto: 'Usuarios', icono: Users, permiso: 'usuarios.ver' },
-    ],
-  },
-  {
-    titulo: 'Cuenta',
-    enlaces: [{ ruta: '/perfil', texto: 'Mi perfil', icono: UserRound }],
-  },
-]
 
 type Props = {
   abierto: boolean
@@ -56,6 +10,7 @@ type Props = {
 
 export function AppSidebar({ abierto, onCerrar }: Props) {
   const { usuario, tienePermiso } = useAuth()
+  const contexto = { rol: usuario?.rol?.clave ?? null, tienePermiso }
 
   const iniciales =
     usuario === null
@@ -89,10 +44,8 @@ export function AppSidebar({ abierto, onCerrar }: Props) {
         </div>
 
         <nav className="app-scroll flex-1 overflow-y-auto px-2.5 py-4" aria-label="Navegación principal">
-          {grupos.map((grupo) => {
-            const visibles = grupo.enlaces.filter(
-              (enlace) => !enlace.permiso || tienePermiso(enlace.permiso),
-            )
+          {GRUPOS_NAVEGACION.map((grupo) => {
+            const visibles = grupo.enlaces.filter((enlace) => enlaceVisible(enlace, contexto))
 
             if (visibles.length === 0) {
               return null

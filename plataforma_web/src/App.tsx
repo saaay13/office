@@ -1,7 +1,9 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { Spinner } from './components/atoms/Button'
 import { AppLayout } from './components/templates/AppLayout'
+import { CLAVES_CONFIGURACION_CREACION } from './config/navegacion'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { AdministrarMiAreaPage } from './pages/AdministrarMiAreaPage'
 import { AreasPage } from './pages/AreasPage'
 import { CargosPage } from './pages/CargosPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
@@ -10,7 +12,9 @@ import { LoginPage } from './pages/LoginPage'
 import { PerfilPage } from './pages/PerfilPage'
 import { PermisosPage } from './pages/PermisosPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { ReunionesPage } from './pages/ReunionesPage'
 import { RolesPage } from './pages/RolesPage'
+import { SeccionesTrabajoPage } from './pages/SeccionesTrabajoPage'
 import { UsuariosPage } from './pages/UsuariosPage'
 
 function RutaPrivada() {
@@ -38,6 +42,16 @@ function RutaConPermiso({ permiso }: { permiso: string }) {
   return tienePermiso(permiso) ? <Outlet /> : <Navigate to="/" replace />
 }
 
+function RutaConAcceso({ permisos }: { permisos: string[] }) {
+  const { tienePermiso } = useAuth()
+
+  return permisos.some((permiso) => tienePermiso(permiso)) ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/" replace />
+  )
+}
+
 function Enrutador() {
   return (
     <Routes>
@@ -49,6 +63,16 @@ function Enrutador() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="perfil" element={<PerfilPage />} />
+
+          <Route element={<RutaConAcceso permisos={['reuniones.ver']} />}>
+            <Route path="reuniones" element={<ReunionesPage />} />
+          </Route>
+          <Route element={<RutaConAcceso permisos={['registros.ver']} />}>
+            <Route path="secciones-de-trabajo" element={<SeccionesTrabajoPage />} />
+          </Route>
+          <Route element={<RutaConAcceso permisos={CLAVES_CONFIGURACION_CREACION} />}>
+            <Route path="administrar-mi-area" element={<AdministrarMiAreaPage />} />
+          </Route>
 
           <Route element={<RutaConPermiso permiso="areas.ver" />}>
             <Route path="areas" element={<AreasPage />} />
