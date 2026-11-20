@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\StatusEntidad;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,7 +16,8 @@ class PermisoResource extends JsonResource
             'nombre' => $this->nombre,
             'modulo' => $this->modulo,
             'descripcion' => $this->descripcion,
-            'activo' => $this->activo,
+            'status' => $this->status,
+            'activo' => $this->status === StatusEntidad::Activo,
         ];
     }
 }

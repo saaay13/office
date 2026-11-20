@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\StatusEntidad;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PermisoRequest;
 use App\Http\Resources\PermisoResource;
@@ -17,12 +18,13 @@ class PermisoController extends Controller
     {
         $this->authorize('viewAny', Permiso::class);
 
-        $permisos = Permiso::query()
-            ->when($request->filled('modulo'), fn ($consulta) => $consulta->where('modulo', $request->string('modulo')->toString()))
-            ->when($request->has('activo'), fn ($consulta) => $consulta->where('activo', $request->boolean('activo')))
-            ->orderBy('modulo')
-            ->orderBy('nombre')
-            ->get();
+        $permisos = $this->aplicarFiltroStatus(
+            Permiso::query()
+                ->when($request->filled('modulo'), fn ($consulta) => $consulta->where('modulo', $request->string('modulo')->toString()))
+                ->orderBy('modulo')
+                ->orderBy('nombre'),
+            $request
+        )->get();
 
         return PermisoResource::collection($permisos);
     }
@@ -48,11 +50,59 @@ class PermisoController extends Controller
         return new PermisoResource($permiso->refresh());
     }
 
+    public function activar(Permiso $permiso): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $permiso,
+            'activar',
+            StatusEntidad::Activo,
+            [StatusEntidad::Desactivado],
+            'Permiso activado.'
+        );
+    }
+
+    public function desactivar(Permiso $permiso): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $permiso,
+            'desactivar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Activo],
+            'Permiso desactivado.'
+        );
+    }
+
     public function destroy(Permiso $permiso): JsonResponse
     {
-        $this->authorize('delete', $permiso);
-        $permiso->update(['activo' => false]);
+        $this->authorize('eliminar', $permiso);
 
-        return response()->json(['message' => 'Permiso desactivado.']);
+        $rolesVigentes = $permiso->roles()
+            ->where('roles.status', '!=', StatusEntidad::Eliminado->value)
+            ->exists();
+
+        if ($rolesVigentes) {
+            return response()->json([
+                'message' => 'No se puede eliminar un permiso asignado a roles vigentes.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        return $this->cambiarStatus(
+            $permiso,
+            'eliminar',
+            StatusEntidad::Eliminado,
+            [StatusEntidad::Activo, StatusEntidad::Desactivado],
+            'Permiso eliminado.'
+        );
+    }
+
+    public function restaurar(Permiso $permiso): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $permiso,
+            'restaurar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Eliminado],
+            'Permiso restaurado. Se encuentra desactivado.'
+        );
     }
 }

@@ -1,5 +1,6 @@
 export {Alert}  from './Alert'
 export { Badge } from './Badge'
+export { EtiquetaEstado } from './EtiquetaEstado'
 export { Button } from './Button'
 export { Input,Select,Textarea } from './Input'
 export { IconoAccion } from './IconoAccion'

@@ -166,11 +166,11 @@ export function HomePage() {
     }
   }, [cargandoSesion, tienePermiso])
 
-  const areasActivas = areas?.filter((area) => area.activo) ?? []
-  const cargosActivos = cargos?.filter((cargo) => cargo.activo) ?? []
-  const rolesActivos = roles?.filter((rol) => rol.activo) ?? []
-  const permisosActivos = permisos?.filter((permiso) => permiso.activo) ?? []
-  const usuariosActivos = usuarios?.filter((usuario) => usuario.activo) ?? []
+  const areasActivas = areas?.filter((area) => area.status === 'activo') ?? []
+  const cargosActivos = cargos?.filter((cargo) => cargo.status === 'activo') ?? []
+  const rolesActivos = roles?.filter((rol) => rol.status === 'activo') ?? []
+  const permisosActivos = permisos?.filter((permiso) => permiso.status === 'activo') ?? []
+  const usuariosActivos = usuarios?.filter((usuario) => usuario.status === 'activo') ?? []
 
   const tarjetas: Tarjeta[] = []
 
@@ -239,7 +239,7 @@ export function HomePage() {
 
         actual.total += 1
 
-        if (registro.activo) {
+        if (registro.status === 'activo') {
           actual.activos += 1
         }
 

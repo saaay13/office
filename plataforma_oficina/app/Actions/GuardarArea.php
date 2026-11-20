@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\StatusEntidad;
 use App\Models\InstanciaCoordinacion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -30,7 +31,7 @@ class GuardarArea
                     : InstanciaCoordinacion::findOrFail($datos['padre_id']);
             }
 
-            if ($padre !== null && ! $padre->activo) {
+            if ($padre !== null && $padre->status !== StatusEntidad::Activo) {
                 throw ValidationException::withMessages([
                     'padre_id' => 'El área padre está inactiva.',
                 ]);

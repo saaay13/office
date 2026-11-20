@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\StatusEntidad;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,7 +16,8 @@ class RolResource extends JsonResource
             'nombre' => $this->nombre,
             'descripcion' => $this->descripcion,
             'es_sistema' => $this->es_sistema,
-            'activo' => $this->activo,
+            'status' => $this->status,
+            'activo' => $this->status === StatusEntidad::Activo,
             'permisos' => $this->whenLoaded('permisos', fn (): array => $this->permisos->pluck('clave')->all()),
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\StatusEntidad;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UsuarioRequest;
 use App\Http\Resources\UsuarioResource;
@@ -20,22 +21,23 @@ class UsuarioController extends Controller
 
         $busqueda = $request->string('q')->toString();
 
-        $usuarios = User::query()
-            ->with('area:id,nombre,codigo', 'rol:id,clave,nombre', 'cargo:id,nombre')
-            ->when($busqueda !== '', function ($consulta) use ($busqueda): void {
-                $consulta->where(function ($condicion) use ($busqueda): void {
-                    $condicion->where('nombres', 'like', '%'.$busqueda.'%')
-                        ->orWhere('apellidos', 'like', '%'.$busqueda.'%')
-                        ->orWhere('usuario', 'like', '%'.$busqueda.'%')
-                        ->orWhere('email', 'like', '%'.$busqueda.'%');
-                });
-            })
-            ->when($request->filled('area_id'), fn ($consulta) => $consulta->where('area_id', $request->integer('area_id')))
-            ->when($request->filled('rol_id'), fn ($consulta) => $consulta->where('rol_id', $request->integer('rol_id')))
-            ->when($request->has('activo'), fn ($consulta) => $consulta->where('activo', $request->boolean('activo')))
-            ->orderBy('apellidos')
-            ->orderBy('nombres')
-            ->get();
+        $usuarios = $this->aplicarFiltroStatus(
+            User::query()
+                ->with('area:id,nombre,codigo', 'rol:id,clave,nombre', 'cargo:id,nombre')
+                ->when($busqueda !== '', function ($consulta) use ($busqueda): void {
+                    $consulta->where(function ($condicion) use ($busqueda): void {
+                        $condicion->where('nombres', 'like', '%'.$busqueda.'%')
+                            ->orWhere('apellidos', 'like', '%'.$busqueda.'%')
+                            ->orWhere('usuario', 'like', '%'.$busqueda.'%')
+                            ->orWhere('email', 'like', '%'.$busqueda.'%');
+                    });
+                })
+                ->when($request->filled('area_id'), fn ($consulta) => $consulta->where('area_id', $request->integer('area_id')))
+                ->when($request->filled('rol_id'), fn ($consulta) => $consulta->where('rol_id', $request->integer('rol_id')))
+                ->orderBy('apellidos')
+                ->orderBy('nombres'),
+            $request
+        )->get();
 
         return UsuarioResource::collection($usuarios);
     }
@@ -44,7 +46,7 @@ class UsuarioController extends Controller
     {
         $datos = $request->validated();
         $datos['password'] = Hash::make($datos['password']);
-        $datos['activo'] = $datos['activo'] ?? true;
+        $datos['status'] = $datos['status'] ?? StatusEntidad::Activo->value;
 
         $usuario = User::create($datos);
 
@@ -73,12 +75,52 @@ class UsuarioController extends Controller
         return new UsuarioResource($usuario->load('area', 'rol', 'cargo'));
     }
 
+    public function activar(User $usuario): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $usuario,
+            'activar',
+            StatusEntidad::Activo,
+            [StatusEntidad::Desactivado],
+            'Usuario activado.'
+        );
+    }
+
+    public function desactivar(User $usuario): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $usuario,
+            'desactivar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Activo],
+            'Usuario desactivado.'
+        );
+    }
+
     public function destroy(User $usuario): JsonResponse
     {
-        $this->authorize('delete', $usuario);
-        $usuario->update(['activo' => false]);
+        $this->authorize('eliminar', $usuario);
+
+        if (! in_array($usuario->status, [StatusEntidad::Activo, StatusEntidad::Desactivado], true)) {
+            return response()->json([
+                'message' => 'La transición de estado no es válida.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        $usuario->update(['status' => StatusEntidad::Eliminado]);
         $usuario->tokens()->delete();
 
-        return response()->json(['message' => 'Usuario desactivado.']);
+        return response()->json(['message' => 'Usuario eliminado.']);
+    }
+
+    public function restaurar(User $usuario): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $usuario,
+            'restaurar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Eliminado],
+            'Usuario restaurado. Se encuentra desactivado.'
+        );
     }
 }

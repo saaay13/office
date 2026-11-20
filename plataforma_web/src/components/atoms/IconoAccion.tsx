@@ -1,9 +1,17 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Ban, Check, Pencil, RotateCcw, Trash2 } from 'lucide-react'
 
-type Nombre = 'editar' | 'desactivar'
+type Nombre = 'editar' | 'activar' | 'desactivar' | 'eliminar' | 'restaurar'
+
+const iconos = {
+  editar: Pencil,
+  activar: Check,
+  desactivar: Ban,
+  eliminar: Trash2,
+  restaurar: RotateCcw,
+}
 
 export function IconoAccion({ nombre }: { nombre: Nombre }) {
-  const Icono = nombre === 'editar' ? Pencil : Trash2
+  const Icono = iconos[nombre]
 
   return <Icono size={14} aria-hidden="true" />
 }

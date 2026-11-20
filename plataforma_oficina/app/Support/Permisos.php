@@ -22,26 +22,36 @@ final class Permisos
     public const AREAS_CREAR = 'areas.crear';
     public const AREAS_EDITAR = 'areas.editar';
     public const AREAS_DESACTIVAR = 'areas.desactivar';
+    public const AREAS_ELIMINAR = 'areas.eliminar';
+    public const AREAS_RESTAURAR = 'areas.restaurar';
 
     public const CARGOS_VER = 'cargos.ver';
     public const CARGOS_CREAR = 'cargos.crear';
     public const CARGOS_EDITAR = 'cargos.editar';
     public const CARGOS_DESACTIVAR = 'cargos.desactivar';
+    public const CARGOS_ELIMINAR = 'cargos.eliminar';
+    public const CARGOS_RESTAURAR = 'cargos.restaurar';
 
     public const ROLES_VER = 'roles.ver';
     public const ROLES_CREAR = 'roles.crear';
     public const ROLES_EDITAR = 'roles.editar';
     public const ROLES_DESACTIVAR = 'roles.desactivar';
+    public const ROLES_ELIMINAR = 'roles.eliminar';
+    public const ROLES_RESTAURAR = 'roles.restaurar';
 
     public const PERMISOS_VER = 'permisos.ver';
     public const PERMISOS_CREAR = 'permisos.crear';
     public const PERMISOS_EDITAR = 'permisos.editar';
     public const PERMISOS_DESACTIVAR = 'permisos.desactivar';
+    public const PERMISOS_ELIMINAR = 'permisos.eliminar';
+    public const PERMISOS_RESTAURAR = 'permisos.restaurar';
 
     public const USUARIOS_VER = 'usuarios.ver';
     public const USUARIOS_CREAR = 'usuarios.crear';
     public const USUARIOS_EDITAR = 'usuarios.editar';
     public const USUARIOS_DESACTIVAR = 'usuarios.desactivar';
+    public const USUARIOS_ELIMINAR = 'usuarios.eliminar';
+    public const USUARIOS_RESTAURAR = 'usuarios.restaurar';
 
     public const REGISTROS_VER = 'registros.ver';
     public const REGISTROS_CREAR = 'registros.crear';
@@ -91,22 +101,32 @@ final class Permisos
                 self::AREAS_CREAR => 'Crear áreas',
                 self::AREAS_EDITAR => 'Editar áreas',
                 self::AREAS_DESACTIVAR => 'Desactivar áreas',
+                self::AREAS_ELIMINAR => 'Eliminar áreas',
+                self::AREAS_RESTAURAR => 'Restaurar áreas',
                 self::CARGOS_VER => 'Ver cargos',
                 self::CARGOS_CREAR => 'Crear cargos',
                 self::CARGOS_EDITAR => 'Editar cargos',
                 self::CARGOS_DESACTIVAR => 'Desactivar cargos',
+                self::CARGOS_ELIMINAR => 'Eliminar cargos',
+                self::CARGOS_RESTAURAR => 'Restaurar cargos',
                 self::ROLES_VER => 'Ver roles',
                 self::ROLES_CREAR => 'Crear roles',
                 self::ROLES_EDITAR => 'Editar roles',
                 self::ROLES_DESACTIVAR => 'Desactivar roles',
+                self::ROLES_ELIMINAR => 'Eliminar roles',
+                self::ROLES_RESTAURAR => 'Restaurar roles',
                 self::PERMISOS_VER => 'Ver permisos',
                 self::PERMISOS_CREAR => 'Crear permisos',
                 self::PERMISOS_EDITAR => 'Editar permisos',
                 self::PERMISOS_DESACTIVAR => 'Desactivar permisos',
+                self::PERMISOS_ELIMINAR => 'Eliminar permisos',
+                self::PERMISOS_RESTAURAR => 'Restaurar permisos',
                 self::USUARIOS_VER => 'Ver usuarios',
                 self::USUARIOS_CREAR => 'Crear usuarios',
                 self::USUARIOS_EDITAR => 'Editar usuarios',
                 self::USUARIOS_DESACTIVAR => 'Desactivar usuarios',
+                self::USUARIOS_ELIMINAR => 'Eliminar usuarios',
+                self::USUARIOS_RESTAURAR => 'Restaurar usuarios',
             ],
             'operacion' => [
                 self::REGISTROS_VER => 'Ver registros',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StatusEntidad;
 use App\Support\Permisos;
 use App\Models\InstanciaCoordinacion;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,25 +37,32 @@ class AreaRequest extends FormRequest
             'padre_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('instancias_coordinacion', 'id')->where('activo', true),
+                Rule::exists('instancias_coordinacion', 'id')->where('status', StatusEntidad::Activo->value),
             ],
             'codigo' => [
                 ...($this->isMethod('POST') ? ['required'] : ['sometimes']),
                 'string',
                 'max:20',
                 'regex:/^[A-Z0-9_-]+$/',
-                Rule::unique('instancias_coordinacion', 'codigo')->ignore($id),
+                Rule::unique('instancias_coordinacion', 'codigo')
+                    ->where(fn ($consulta) => $consulta->where('status', '!=', StatusEntidad::Eliminado->value))
+                    ->ignore($id),
             ],
             'nombre' => ['required', 'string', 'max:150'],
             'tipo' => ['nullable', Rule::in(Permisos::TIPOS_AREA)],
             'responsable_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('users', 'id')->where('activo', true),
+                Rule::exists('users', 'id')->where('status', StatusEntidad::Activo->value),
             ],
             'email' => ['nullable', 'email', 'max:150'],
             'telefono' => ['nullable', 'string', 'max:30'],
-            'activo' => ['sometimes', 'boolean'],
+            'status' => [
+                'sometimes',
+                function (string $attribute, mixed $value, $fail): void {
+                    $fail('El estado del área no se puede cambiar desde este formulario.');
+                },
+            ],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StatusEntidad;
 use App\Models\Cargo;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -24,8 +25,16 @@ class UsuarioRequest extends FormRequest
         $id = $usuario?->id;
 
         return [
-            'rol_id' => ['required', 'integer', 'exists:roles,id'],
-            'area_id' => ['required', 'integer', 'exists:instancias_coordinacion,id'],
+            'rol_id' => [
+                'required',
+                'integer',
+                Rule::exists('roles', 'id')->where('status', StatusEntidad::Activo->value),
+            ],
+            'area_id' => [
+                'required',
+                'integer',
+                Rule::exists('instancias_coordinacion', 'id')->where('status', StatusEntidad::Activo->value),
+            ],
             'cargo_id' => [
                 'nullable',
                 'integer',
@@ -42,11 +51,14 @@ class UsuarioRequest extends FormRequest
                         return;
                     }
 
-                    $sinCambio = $usuario instanceof User
-                        && (int) $usuario->cargo_id === (int) $value;
+                    $sinCambioDesactivado = $usuario instanceof User
+                        && (int) $usuario->cargo_id === (int) $value
+                        && $cargo->status === StatusEntidad::Desactivado;
 
-                    if (! $cargo->activo && ! $sinCambio) {
-                        $fail('No se puede asignar un cargo inactivo.');
+                    if ($cargo->status !== StatusEntidad::Activo && ! $sinCambioDesactivado) {
+                        $fail($cargo->status === StatusEntidad::Eliminado
+                            ? 'No se puede asignar un cargo eliminado.'
+                            : 'No se puede asignar un cargo inactivo.');
                     }
                 },
             ],
@@ -56,13 +68,17 @@ class UsuarioRequest extends FormRequest
                 $usuario === null ? 'required' : 'sometimes',
                 'string',
                 'max:50',
-                Rule::unique('users', 'usuario')->ignore($id),
+                Rule::unique('users', 'usuario')
+                    ->where(fn ($consulta) => $consulta->where('status', '!=', StatusEntidad::Eliminado->value))
+                    ->ignore($id),
             ],
             'email' => [
                 'required',
                 'email',
                 'max:150',
-                Rule::unique('users', 'email')->ignore($id),
+                Rule::unique('users', 'email')
+                    ->where(fn ($consulta) => $consulta->where('status', '!=', StatusEntidad::Eliminado->value))
+                    ->ignore($id),
             ],
             'telefono' => ['nullable', 'string', 'max:30'],
             'password' => [
@@ -71,7 +87,12 @@ class UsuarioRequest extends FormRequest
                 'min:8',
                 'confirmed',
             ],
-            'activo' => ['sometimes', 'boolean'],
+            'status' => [
+                'sometimes',
+                function (string $attribute, mixed $value, $fail): void {
+                    $fail('El estado del usuario no se puede cambiar desde este formulario.');
+                },
+            ],
         ];
     }
 

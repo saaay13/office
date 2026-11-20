@@ -28,8 +28,28 @@ class RolPolicy
         return $user->tienePermiso(Permisos::ROLES_EDITAR);
     }
 
-    public function delete(User $user, Rol $rol): bool
+    public function activar(User $user, Rol $rol): bool
     {
         return $user->tienePermiso(Permisos::ROLES_DESACTIVAR);
+    }
+
+    public function desactivar(User $user, Rol $rol): bool
+    {
+        return $user->tienePermiso(Permisos::ROLES_DESACTIVAR);
+    }
+
+    public function eliminar(User $user, Rol $rol): bool
+    {
+        return $user->tienePermiso(Permisos::ROLES_ELIMINAR);
+    }
+
+    public function restaurar(User $user, Rol $rol): bool
+    {
+        return $user->tienePermiso(Permisos::ROLES_RESTAURAR);
+    }
+
+    public function delete(User $user, Rol $rol): bool
+    {
+        return $this->eliminar($user, $rol);
     }
 }

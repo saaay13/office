@@ -57,7 +57,7 @@ class AuthTest extends TestCase
             'password' => 'incorrecta',
         ])->assertStatus(422)->assertJsonValidationErrors('usuario');
 
-        User::query()->where('usuario', 'pa')->update(['activo' => false]);
+        User::query()->where('usuario', 'pa')->update(['status' => 'desactivado']);
 
         $this->postJson('/api/auth/login', [
             'usuario' => 'pa',
@@ -72,7 +72,7 @@ class AuthTest extends TestCase
             'password' => '123456',
         ])->assertOk()->json('token');
 
-        User::query()->where('usuario', 'pa')->update(['activo' => false]);
+        User::query()->where('usuario', 'pa')->update(['status' => 'desactivado']);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/auth/me')

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\StatusEntidad;
 use App\Models\Cargo;
 use Illuminate\Database\Seeder;
 
@@ -12,7 +13,7 @@ class CargosSeeder extends Seeder
         foreach (['Director', 'Administrador', 'Profesional', 'Técnico', 'Secretario', 'Analista'] as $nombre) {
             Cargo::query()->updateOrCreate(
                 ['nombre' => $nombre],
-                ['activo' => true]
+                ['status' => StatusEntidad::Activo->value]
             );
         }
     }

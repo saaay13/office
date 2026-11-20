@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusEntidad;
 use App\Support\Permisos;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,7 +29,7 @@ class User extends Authenticatable
         'email',
         'password',
         'telefono',
-        'activo',
+        'status',
         'ultimo_acceso_at',
     ];
 
@@ -40,7 +41,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'ultimo_acceso_at' => 'datetime',
-        'activo' => 'boolean',
+        'status' => StatusEntidad::class,
     ];
 
     public function area(): BelongsTo
@@ -65,7 +66,10 @@ class User extends Authenticatable
 
     public function tienePermiso(string $clave): bool
     {
-        $claves = once(fn (): array => $this->permisos()->where('activo', true)->pluck('clave')->all());
+        $claves = once(fn (): array => $this->permisos()
+            ->where('permisos.status', StatusEntidad::Activo->value)
+            ->pluck('permisos.clave')
+            ->all());
 
         return in_array($clave, $claves, true);
     }
@@ -148,6 +152,21 @@ class User extends Authenticatable
 
     public function scopeActivos(Builder $query): Builder
     {
-        return $query->where('activo', true);
+        return $query->where('status', StatusEntidad::Activo->value);
+    }
+
+    public function scopeDesactivados(Builder $query): Builder
+    {
+        return $query->where('status', StatusEntidad::Desactivado->value);
+    }
+
+    public function scopeEliminados(Builder $query): Builder
+    {
+        return $query->where('status', StatusEntidad::Eliminado->value);
+    }
+
+    public function scopeNoEliminados(Builder $query): Builder
+    {
+        return $query->where('status', '!=', StatusEntidad::Eliminado->value);
     }
 }

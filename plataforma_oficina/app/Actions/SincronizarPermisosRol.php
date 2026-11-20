@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\StatusEntidad;
 use App\Support\Permisos;
 use App\Models\Permiso;
 use App\Models\Rol;
@@ -21,7 +22,7 @@ class SincronizarPermisosRol
         return DB::transaction(function () use ($rol, $permisos): Rol {
             $ids = Permiso::query()
                 ->whereIn('id', $permisos)
-                ->where('activo', true)
+                ->where('status', StatusEntidad::Activo->value)
                 ->pluck('id')
                 ->all();
 

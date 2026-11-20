@@ -91,9 +91,9 @@ class AreasTest extends TestCase
 
         $this->deleteJson('/api/areas/'.$despacho->id)
             ->assertStatus(409)
-            ->assertJsonPath('message', 'No se puede desactivar un área con áreas hijas activas.');
+            ->assertJsonPath('message', 'No se puede eliminar un área con áreas hijas vigentes.');
 
-        $this->assertDatabaseHas('instancias_coordinacion', ['id' => $despacho->id, 'activo' => 1]);
+        $this->assertDatabaseHas('instancias_coordinacion', ['id' => $despacho->id, 'status' => 'activo']);
     }
 
     public function test_recalcula_ruta_y_nivel_al_mover_un_area(): void
@@ -148,7 +148,7 @@ class AreasTest extends TestCase
             ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.codigo', 'GAA');
 
-        $this->getJson('/api/areas?activo=false')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/areas?status=desactivado')->assertOk()->assertJsonCount(0, 'data');
     }
 
     private function autenticar(string $usuario): void

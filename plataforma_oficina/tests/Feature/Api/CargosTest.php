@@ -37,12 +37,12 @@ class CargosTest extends TestCase
         $secretario = Cargo::query()->where('nombre', 'Secretario')->firstOrFail();
         $this->deleteJson('/api/cargos/'.$secretario->id)->assertOk();
 
-        $inactivos = $this->getJson('/api/cargos?activo=false')
+        $eliminados = $this->getJson('/api/cargos?status=eliminado')
             ->assertOk()
             ->json('data');
 
-        $this->assertCount(1, $inactivos);
-        $this->assertSame('Secretario', $inactivos[0]['nombre']);
+        $this->assertCount(1, $eliminados);
+        $this->assertSame('Secretario', $eliminados[0]['nombre']);
     }
 
     public function test_normaliza_el_nombre_y_valida_unicidad_al_crear_y_editar(): void
@@ -68,9 +68,9 @@ class CargosTest extends TestCase
         ])->assertOk()->assertJsonPath('data.nombre', 'Auditor interno');
     }
 
-    public function test_edita_y_desactiva_un_cargo(): void
+    public function test_edita_y_elimina_un_cargo(): void
     {
-        $cargo = Cargo::query()->where('nombre', 'Analista')->firstOrFail();
+        $cargo = Cargo::query()->create(['nombre' => 'Analista temporal']);
 
         $this->putJson('/api/cargos/'.$cargo->id, [
             'nombre' => 'Analista de soporte',
@@ -83,7 +83,7 @@ class CargosTest extends TestCase
 
         $this->assertDatabaseHas('cargos', [
             'id' => $cargo->id,
-            'activo' => false,
+            'status' => 'eliminado',
             'nombre' => 'Analista de soporte',
         ]);
     }
@@ -96,20 +96,20 @@ class CargosTest extends TestCase
 
         $this->putJson('/api/cargos/'.$cargo->id, [
             'nombre' => $cargo->nombre,
-            'activo' => true,
-        ])->assertStatus(422)->assertJsonValidationErrors('activo');
+            'status' => 'activo',
+        ])->assertStatus(422)->assertJsonValidationErrors('status');
 
-        $this->assertDatabaseHas('cargos', ['id' => $cargo->id, 'activo' => false]);
+        $this->assertDatabaseHas('cargos', ['id' => $cargo->id, 'status' => 'eliminado']);
     }
 
-    public function test_asocia_cargos_a_usuarios_y_rechaza_cargos_inactivos(): void
+    public function test_asocia_cargos_y_rechaza_cargos_inactivos_o_eliminados(): void
     {
         $rol = Rol::query()->where('clave', Permisos::ROL_PERSONAL)->firstOrFail();
         $area = InstanciaCoordinacion::query()->where('codigo', 'GAA')->firstOrFail();
 
         $cargoAsignado = Cargo::query()->create(['nombre' => 'Analista de pruebas']);
-        $cargoInactivo = Cargo::query()->create(['nombre' => 'Auditoría de pruebas']);
-        $this->deleteJson('/api/cargos/'.$cargoInactivo->id)->assertOk();
+        $cargoEliminado = Cargo::query()->create(['nombre' => 'Auditoría de pruebas']);
+        $this->deleteJson('/api/cargos/'.$cargoEliminado->id)->assertOk();
 
         $usuario = $this->postJson('/api/usuarios', [
             'rol_id' => $rol->id,
@@ -123,30 +123,36 @@ class CargosTest extends TestCase
             'password_confirmation' => 'Clave12345!',
         ])->assertCreated()->json('data');
 
-        $this->assertDatabaseHas('users', [
-            'id' => $usuario['id'],
-            'cargo_id' => $cargoAsignado->id,
-        ]);
-
         $datosEdicion = [
             'rol_id' => $rol->id,
             'area_id' => $area->id,
-            'cargo_id' => $cargoInactivo->id,
+            'cargo_id' => $cargoAsignado->id,
             'nombres' => 'Cargo',
             'apellidos' => 'Asociado',
             'email' => 'cargo_asociado@tarija.gob.bo',
         ];
 
-        $this->putJson('/api/usuarios/'.$usuario['id'], $datosEdicion)
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('cargo_id');
+        $this->postJson('/api/cargos/'.$cargoAsignado->id.'/desactivar')->assertOk();
 
-        $this->deleteJson('/api/cargos/'.$cargoAsignado->id)->assertOk();
+        $this->putJson('/api/usuarios/'.$usuario['id'], $datosEdicion)
+            ->assertOk()
+            ->assertJsonPath('data.cargo_id', $cargoAsignado->id);
 
         $this->putJson('/api/usuarios/'.$usuario['id'], [
             ...$datosEdicion,
-            'cargo_id' => $cargoAsignado->id,
-        ])->assertOk()->assertJsonPath('data.cargo_id', $cargoAsignado->id);
+            'cargo_id' => $cargoEliminado->id,
+        ])->assertStatus(422)->assertJsonValidationErrors('cargo_id');
+
+        $this->putJson('/api/usuarios/'.$usuario['id'], [
+            ...$datosEdicion,
+            'cargo_id' => null,
+        ])->assertOk()->assertJsonPath('data.cargo_id', null);
+
+        $this->deleteJson('/api/cargos/'.$cargoAsignado->id)->assertOk();
+
+        $this->putJson('/api/usuarios/'.$usuario['id'], $datosEdicion)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('cargo_id');
     }
 
     public function test_los_permisos_de_cargos_se_resetan_por_rol(): void

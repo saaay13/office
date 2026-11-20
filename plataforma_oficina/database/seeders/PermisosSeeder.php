@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\StatusEntidad;
 use App\Models\Permiso;
 use App\Models\Rol;
 use App\Support\Permisos;
@@ -17,7 +18,7 @@ class PermisosSeeder extends Seeder
                 [
                     'nombre' => $definicion['nombre'],
                     'modulo' => $definicion['modulo'],
-                    'activo' => true,
+                    'status' => StatusEntidad::Activo->value,
                 ]
             );
         }

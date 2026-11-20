@@ -20,7 +20,7 @@ class OpcionesController extends Controller
     {
         $areas = InstanciaCoordinacion::query()
             ->visiblesPara($request->user())
-            ->where('activo', true)
+            ->activos()
             ->orderBy('ruta')
             ->orderBy('nombre')
             ->get();

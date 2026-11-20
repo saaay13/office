@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StatusEntidad;
 use App\Models\Rol;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,13 +28,23 @@ class RolRequest extends FormRequest
                 $rol === null ? 'required' : 'sometimes',
                 'string',
                 'max:50',
-                Rule::unique('roles', 'clave')->ignore($rol?->id),
+                Rule::unique('roles', 'clave')
+                    ->where(fn ($consulta) => $consulta->where('status', '!=', StatusEntidad::Eliminado->value))
+                    ->ignore($rol?->id),
             ],
             'nombre' => ['required', 'string', 'max:100'],
             'descripcion' => ['nullable', 'string', 'max:255'],
-            'activo' => ['sometimes', 'boolean'],
+            'status' => [
+                'sometimes',
+                function (string $attribute, mixed $value, $fail): void {
+                    $fail('El estado del rol no se puede cambiar desde este formulario.');
+                },
+            ],
             'permisos' => ['sometimes', 'array'],
-            'permisos.*' => ['integer', 'exists:permisos,id'],
+            'permisos.*' => [
+                'integer',
+                Rule::exists('permisos', 'id')->where('status', StatusEntidad::Activo->value),
+            ],
         ];
     }
 

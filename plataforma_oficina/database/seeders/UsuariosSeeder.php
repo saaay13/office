@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\StatusEntidad;
 use App\Models\Cargo;
 use App\Models\InstanciaCoordinacion;
 use App\Models\Rol;
@@ -47,7 +48,7 @@ class UsuariosSeeder extends Seeder
                     'apellidos' => $apellidos,
                     'email' => $email,
                     'password' => Hash::make($clavePrueba),
-                    'activo' => true,
+                    'status' => StatusEntidad::Activo->value,
                 ]
             );
         }

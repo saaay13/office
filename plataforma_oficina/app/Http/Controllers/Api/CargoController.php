@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\StatusEntidad;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CargoRequest;
 use App\Http\Resources\CargoResource;
@@ -19,11 +20,12 @@ class CargoController extends Controller
 
         $busqueda = $request->string('q')->toString();
 
-        $cargos = Cargo::query()
-            ->when($busqueda !== '', fn ($consulta) => $consulta->where('nombre', 'like', '%'.$busqueda.'%'))
-            ->when($request->has('activo'), fn ($consulta) => $consulta->where('activo', $request->boolean('activo')))
-            ->orderBy('nombre')
-            ->get();
+        $cargos = $this->aplicarFiltroStatus(
+            Cargo::query()
+                ->when($busqueda !== '', fn ($consulta) => $consulta->where('nombre', 'like', '%'.$busqueda.'%'))
+                ->orderBy('nombre'),
+            $request
+        )->get();
 
         return CargoResource::collection($cargos);
     }
@@ -49,11 +51,55 @@ class CargoController extends Controller
         return new CargoResource($cargo->refresh());
     }
 
+    public function activar(Cargo $cargo): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $cargo,
+            'activar',
+            StatusEntidad::Activo,
+            [StatusEntidad::Desactivado],
+            'Cargo activado.'
+        );
+    }
+
+    public function desactivar(Cargo $cargo): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $cargo,
+            'desactivar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Activo],
+            'Cargo desactivado.'
+        );
+    }
+
     public function destroy(Cargo $cargo): JsonResponse
     {
-        $this->authorize('delete', $cargo);
-        $cargo->update(['activo' => false]);
+        $this->authorize('eliminar', $cargo);
 
-        return response()->json(['message' => 'Cargo desactivado.']);
+        if ($cargo->usuarios()->where('status', StatusEntidad::Activo->value)->exists()) {
+            return response()->json([
+                'message' => 'No se puede eliminar un cargo con usuarios activos asignados.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        return $this->cambiarStatus(
+            $cargo,
+            'eliminar',
+            StatusEntidad::Eliminado,
+            [StatusEntidad::Activo, StatusEntidad::Desactivado],
+            'Cargo eliminado.'
+        );
+    }
+
+    public function restaurar(Cargo $cargo): JsonResponse
+    {
+        return $this->cambiarStatus(
+            $cargo,
+            'restaurar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Eliminado],
+            'Cargo restaurado. Se encuentra desactivado.'
+        );
     }
 }

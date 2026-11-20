@@ -27,8 +27,28 @@ class UserPolicy
         return $user->tienePermiso(Permisos::USUARIOS_EDITAR);
     }
 
-    public function delete(User $user, User $destino): bool
+    public function activar(User $user, User $destino): bool
     {
         return $user->tienePermiso(Permisos::USUARIOS_DESACTIVAR) && $user->id !== $destino->id;
+    }
+
+    public function desactivar(User $user, User $destino): bool
+    {
+        return $user->tienePermiso(Permisos::USUARIOS_DESACTIVAR) && $user->id !== $destino->id;
+    }
+
+    public function eliminar(User $user, User $destino): bool
+    {
+        return $user->tienePermiso(Permisos::USUARIOS_ELIMINAR) && $user->id !== $destino->id;
+    }
+
+    public function restaurar(User $user, User $destino): bool
+    {
+        return $user->tienePermiso(Permisos::USUARIOS_RESTAURAR) && $user->id !== $destino->id;
+    }
+
+    public function delete(User $user, User $destino): bool
+    {
+        return $this->eliminar($user, $destino);
     }
 }

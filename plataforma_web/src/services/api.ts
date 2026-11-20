@@ -116,8 +116,14 @@ function recursos<T>(recurso: string) {
     actualizar: (id: number, datos: Record<string, unknown>): Promise<T> =>
       solicitar<Envelope<T>>(`/${recurso}/${id}`, { method: 'PUT', body: JSON.stringify(datos) })
         .then((respuesta) => respuesta.data),
+    activar: (id: number): Promise<RespuestaMensaje> =>
+      solicitar<RespuestaMensaje>(`/${recurso}/${id}/activar`, { method: 'POST' }),
     desactivar: (id: number): Promise<RespuestaMensaje> =>
+      solicitar<RespuestaMensaje>(`/${recurso}/${id}/desactivar`, { method: 'POST' }),
+    eliminar: (id: number): Promise<RespuestaMensaje> =>
       solicitar<RespuestaMensaje>(`/${recurso}/${id}`, { method: 'DELETE' }),
+    restaurar: (id: number): Promise<RespuestaMensaje> =>
+      solicitar<RespuestaMensaje>(`/${recurso}/${id}/restaurar`, { method: 'POST' }),
   }
 }
 

@@ -1,30 +1,43 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Plus } from 'lucide-react'
-import { Alert,Badge,Button,IconoAccion,Input,Textarea } from '../atoms'
-import { ConfirmDialog,FormModal,SearchField,Tabla,EmptyState } from '../molecules'
+import { Alert, Badge, Button, EtiquetaEstado, IconoAccion, Input, Select, Textarea } from '../atoms'
+import { ConfirmDialog, FormModal, SearchField, Tabla, EmptyState } from '../molecules'
 import type { ColumnaTabla } from '../molecules/Tabla'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
+import {
+  accionesDisponibles,
+  ejecutarAccion,
+  ETIQUETAS_ACCION,
+  FILTROS_ESTADO,
+  mensajeConfirmacion,
+  mensajeExito,
+  sufijoPermiso,
+} from '../../services/catalogos'
+import type { AccionCatalogo } from '../../services/catalogos'
 import { mensajeDeError } from '../../services/errores'
 import type { Permiso, Rol } from '../../types'
 
 type Formulario = { clave: string; nombre: string; descripcion: string; permisos: number[] }
+type Accion = { tipo: AccionCatalogo; rol: Rol }
 
 const formularioVacio: Formulario = { clave: '', nombre: '', descripcion: '', permisos: [] }
 
 export function RolesManager() {
-  const { elementos, cargando, error, recargar } = useRecurso<Rol>('roles')
+  const [estado, setEstado] = useState('')
+  const filtros = useMemo(() => ({ status: estado || undefined }), [estado])
+  const { elementos, cargando, error, recargar } = useRecurso<Rol>('roles', filtros)
   const { tienePermiso } = useAuth()
   const [permisos, setPermisos] = useState<Permiso[]>([])
   const [busqueda, setBusqueda] = useState('')
   const [formulario, setFormulario] = useState<Formulario>(formularioVacio)
   const [editando, setEditando] = useState<Rol | null>(null)
   const [modalAbierta, setModalAbierta] = useState(false)
-  const [aDesactivar, setADesactivar] = useState<Rol | null>(null)
+  const [accion, setAccion] = useState<Accion | null>(null)
   const [guardando, setGuardando] = useState(false)
-  const [desactivando, setDesactivando] = useState(false)
+  const [procesando, setProcesando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [fallo, setFallo] = useState('')
 
@@ -96,9 +109,7 @@ export function RolesManager() {
     {
       clave: 'estado',
       nombre: 'Estado',
-      celda: (rol) => (
-        <Badge tono={rol.activo ? 'exito' : 'neutro'}>{rol.activo ? 'Activo' : 'Inactivo'}</Badge>
-      ),
+      celda: (rol) => <EtiquetaEstado status={rol.status} />,
     },
     {
       clave: 'acciones',
@@ -106,7 +117,7 @@ export function RolesManager() {
       alineacion: 'derecha',
       celda: (rol) => (
         <div className="flex justify-end gap-1.5">
-          {tienePermiso('roles.editar') && (
+          {tienePermiso('roles.editar') && rol.status !== 'eliminado' && (
             <Button
               variante="contorno"
               tamano="icono"
@@ -117,17 +128,21 @@ export function RolesManager() {
               <IconoAccion nombre="editar" />
             </Button>
           )}
-          {tienePermiso('roles.desactivar') && rol.activo && !rol.es_sistema && (
-            <Button
-              variante="peligroSuave"
-              tamano="icono"
-              onClick={() => setADesactivar(rol)}
-              aria-label={`Desactivar ${rol.nombre}`}
-              title={`Desactivar ${rol.nombre}`}
-            >
-              <IconoAccion nombre="desactivar" />
-            </Button>
-          )}
+          {!rol.es_sistema &&
+            accionesDisponibles(rol.status)
+              .filter((tipo) => tienePermiso(`roles.${sufijoPermiso(tipo)}`))
+              .map((tipo) => (
+                <Button
+                  key={tipo}
+                  variante={tipo === 'activar' || tipo === 'restaurar' ? 'contorno' : 'peligroSuave'}
+                  tamano="icono"
+                  onClick={() => setAccion({ tipo, rol })}
+                  aria-label={`${ETIQUETAS_ACCION[tipo]} ${rol.nombre}`}
+                  title={`${ETIQUETAS_ACCION[tipo]} ${rol.nombre}`}
+                >
+                  <IconoAccion nombre={tipo} />
+                </Button>
+              ))}
         </div>
       ),
     },
@@ -197,23 +212,23 @@ export function RolesManager() {
     }
   }
 
-  async function desactivar(): Promise<void> {
-    if (aDesactivar === null) {
+  async function ejecutar(): Promise<void> {
+    if (accion === null) {
       return
     }
 
-    setDesactivando(true)
+    setProcesando(true)
     setFallo('')
 
     try {
-      await api.roles.desactivar(aDesactivar.id)
-      setAviso('Rol desactivado correctamente.')
-      setADesactivar(null)
+      await ejecutarAccion('roles', accion.rol.id, accion.tipo)
+      setAviso(mensajeExito(accion.tipo, 'Rol'))
+      setAccion(null)
       await recargar()
-    } catch (falloDesactivacion) {
-      setFallo(mensajeDeError(falloDesactivacion))
+    } catch (falloAccion) {
+      setFallo(mensajeDeError(falloAccion))
     } finally {
-      setDesactivando(false)
+      setProcesando(false)
     }
   }
 
@@ -222,7 +237,18 @@ export function RolesManager() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar rol" />
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar rol" />
+          <Select
+            etiqueta="Estado"
+            value={estado}
+            onChange={(evento) => setEstado(evento.target.value)}
+            opciones={FILTROS_ESTADO}
+            permitirVacio
+            textoVacio="Todos los estados"
+            className="w-36"
+          />
+        </div>
 
         {tienePermiso('roles.crear') && (
           <Button onClick={abrirNuevo}>
@@ -243,14 +269,14 @@ export function RolesManager() {
       ) : roles.length === 0 ? (
         <EmptyState
           titulo="Sin roles"
-          descripcion="No se registran roles para la búsqueda actual."
+          descripcion="No se registran roles para los filtros actuales."
         />
       ) : (
         <Tabla
           columnas={columnas}
           datos={roles}
           obtenerClave={(rol) => rol.id}
-          mensajeVacio="No se registran roles para la búsqueda actual."
+          mensajeVacio="No se registran roles para los filtros actuales."
         />
       )}
 
@@ -340,13 +366,14 @@ export function RolesManager() {
         </FormModal>
       )}
 
-      {aDesactivar && (
+      {accion && (
         <ConfirmDialog
-          titulo="Desactivar rol"
-          mensaje={`¿Desactivar el rol "${aDesactivar.nombre}"?`}
-          confirmando={desactivando}
-          onConfirmar={() => void desactivar()}
-          onCancelar={() => setADesactivar(null)}
+          titulo={`${ETIQUETAS_ACCION[accion.tipo]} rol`}
+          mensaje={`${mensajeConfirmacion(accion.tipo, accion.rol.nombre)}${accion.tipo === 'eliminar' ? ' El rol pasará a la papelera y podrá restaurarse.' : ''}${accion.tipo === 'restaurar' ? ' Volverá con estado desactivado.' : ''}`}
+          confirmando={procesando}
+          confirmarTexto={ETIQUETAS_ACCION[accion.tipo]}
+          onConfirmar={() => void ejecutar()}
+          onCancelar={() => setAccion(null)}
         />
       )}
     </div>

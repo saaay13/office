@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\StatusEntidad;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -21,7 +22,7 @@ class AutenticarUsuario
             ]);
         }
 
-        if (! $usuario->activo) {
+        if ($usuario->status !== StatusEntidad::Activo) {
             throw ValidationException::withMessages([
                 'usuario' => 'El usuario está inactivo.',
             ]);

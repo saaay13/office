@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\SincronizarPermisosRol;
+use App\Enums\StatusEntidad;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RolRequest;
 use App\Http\Resources\RolResource;
@@ -18,11 +19,10 @@ class RolController extends Controller
     {
         $this->authorize('viewAny', Rol::class);
 
-        $roles = Rol::query()
-            ->with('permisos:id,clave')
-            ->when($request->has('activo'), fn ($consulta) => $consulta->where('activo', $request->boolean('activo')))
-            ->orderBy('nombre')
-            ->get();
+        $roles = $this->aplicarFiltroStatus(
+            Rol::query()->with('permisos:id,clave')->orderBy('nombre'),
+            $request
+        )->get();
 
         return RolResource::collection($roles);
     }
@@ -49,7 +49,7 @@ class RolController extends Controller
     public function update(RolRequest $request, Rol $rol, SincronizarPermisosRol $sincronizar): RolResource
     {
         $datos = $request->validated();
-        $rol->update(array_intersect_key($datos, array_flip(['nombre', 'descripcion', 'activo'])));
+        $rol->update(array_intersect_key($datos, array_flip(['nombre', 'descripcion'])));
 
         if (array_key_exists('permisos', $datos)) {
             $rol = $sincronizar->execute($rol, $datos['permisos']);
@@ -58,18 +58,78 @@ class RolController extends Controller
         return new RolResource($rol->load('permisos'));
     }
 
+    public function activar(Rol $rol): JsonResponse
+    {
+        if ($rol->es_sistema) {
+            return $this->conflictoRolSistema('activar');
+        }
+
+        return $this->cambiarStatus(
+            $rol,
+            'activar',
+            StatusEntidad::Activo,
+            [StatusEntidad::Desactivado],
+            'Rol activado.'
+        );
+    }
+
+    public function desactivar(Rol $rol): JsonResponse
+    {
+        if ($rol->es_sistema) {
+            return $this->conflictoRolSistema('desactivar');
+        }
+
+        return $this->cambiarStatus(
+            $rol,
+            'desactivar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Activo],
+            'Rol desactivado.'
+        );
+    }
+
     public function destroy(Rol $rol): JsonResponse
     {
-        $this->authorize('delete', $rol);
-
         if ($rol->es_sistema) {
+            return $this->conflictoRolSistema('eliminar');
+        }
+
+        $this->authorize('eliminar', $rol);
+
+        if ($rol->usuarios()->where('status', StatusEntidad::Activo->value)->exists()) {
             return response()->json([
-                'message' => 'Los roles del sistema no se pueden desactivar.',
+                'message' => 'No se puede eliminar un rol con usuarios activos asignados.',
             ], Response::HTTP_CONFLICT);
         }
 
-        $rol->update(['activo' => false]);
+        return $this->cambiarStatus(
+            $rol,
+            'eliminar',
+            StatusEntidad::Eliminado,
+            [StatusEntidad::Activo, StatusEntidad::Desactivado],
+            'Rol eliminado.'
+        );
+    }
 
-        return response()->json(['message' => 'Rol desactivado.']);
+    public function restaurar(Rol $rol): JsonResponse
+    {
+        if ($rol->es_sistema) {
+            return $this->conflictoRolSistema('restaurar');
+        }
+
+        return $this->cambiarStatus(
+            $rol,
+            'restaurar',
+            StatusEntidad::Desactivado,
+            [StatusEntidad::Eliminado],
+            'Rol restaurado. Se encuentra desactivado.'
+        );
+    }
+
+    private function conflictoRolSistema(string $accion): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Los roles del sistema no se pueden '.$accion.'.',
+        ], Response::HTTP_CONFLICT);
     }
 }

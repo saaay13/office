@@ -28,11 +28,11 @@ class GestionTest extends TestCase
             'descripcion' => 'Coordinador temporal para pruebas',
         ])->assertCreated()->json('data');
 
-        $this->assertDatabaseHas('cargos', ['id' => $creado['id'], 'activo' => 1]);
+        $this->assertDatabaseHas('cargos', ['id' => $creado['id'], 'status' => 'activo']);
 
         $this->deleteJson('/api/cargos/'.$creado['id'])->assertOk();
 
-        $this->assertDatabaseHas('cargos', ['id' => $creado['id'], 'activo' => 0]);
+        $this->assertDatabaseHas('cargos', ['id' => $creado['id'], 'status' => 'eliminado']);
     }
 
     public function test_valida_la_unicidad_del_codigo_de_area(): void
@@ -116,7 +116,7 @@ class GestionTest extends TestCase
 
         $this->deleteJson('/api/usuarios/'.$usuario['id'])->assertOk();
 
-        $this->assertDatabaseHas('users', ['id' => $usuario['id'], 'activo' => 0]);
+        $this->assertDatabaseHas('users', ['id' => $usuario['id'], 'status' => 'eliminado']);
     }
 
     private function admin(): User

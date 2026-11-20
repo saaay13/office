@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Badge,Button,IconoAccion  } from '../atoms'
+import { Button, EtiquetaEstado, IconoAccion } from '../atoms'
 import { EmptyState } from '../molecules'
+import {
+  accionesDisponibles,
+  ETIQUETAS_ACCION,
+} from '../../services/catalogos'
+import type { AccionCatalogo } from '../../services/catalogos'
 import type { Area } from '../../types'
 
 type Nodo = Area & { hijos: Nodo[] }
@@ -9,9 +14,9 @@ type Nodo = Area & { hijos: Nodo[] }
 type Props = {
   areas: Area[]
   puedeEditar: boolean
-  puedeDesactivar: boolean
+  puede: (tipo: AccionCatalogo) => boolean
   onEditar: (area: Area) => void
-  onDesactivar: (area: Area) => void
+  onAccion: (tipo: AccionCatalogo, area: Area) => void
 }
 
 function construirArbol(areas: Area[]): Nodo[] {
@@ -47,15 +52,11 @@ function construirArbol(areas: Area[]): Nodo[] {
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 }
 
-type FilaProps = {
+type FilaProps = Omit<Props, 'areas'> & {
   nodo: Nodo
   nivel: number
   contraidos: Set<number>
   onAlternar: (id: number) => void
-  puedeEditar: boolean
-  puedeDesactivar: boolean
-  onEditar: (area: Area) => void
-  onDesactivar: (area: Area) => void
 }
 
 function FilaArbol({
@@ -64,9 +65,9 @@ function FilaArbol({
   contraidos,
   onAlternar,
   puedeEditar,
-  puedeDesactivar,
+  puede,
   onEditar,
-  onDesactivar,
+  onAccion,
 }: FilaProps) {
   const contraido = contraidos.has(nodo.id)
 
@@ -88,17 +89,17 @@ function FilaArbol({
 
         <span className="font-mono text-[10px] text-brand-700">{nodo.codigo ?? '—'}</span>
         <span className="text-xs font-semibold text-ink">{nodo.nombre}</span>
-        <Badge tono="neutro">{nodo.tipo ?? 'Sin tipo'}</Badge>
+        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
+          {nodo.tipo ?? 'Sin tipo'}
+        </span>
         <span className="text-[10px] text-muted">Nivel {nodo.nivel ?? '—'}</span>
         <span className="text-[10px] text-muted">
           {nodo.responsable?.nombre ?? 'Sin responsable'}
         </span>
-        <Badge tono={nodo.activo ? 'exito' : 'neutro'}>
-          {nodo.activo ? 'Activa' : 'Inactiva'}
-        </Badge>
+        <EtiquetaEstado status={nodo.status} femenino />
 
         <div className="ml-auto flex gap-1">
-          {puedeEditar && (
+          {puedeEditar && nodo.status !== 'eliminado' && (
             <Button
               variante="fantasma"
               tamano="icono"
@@ -109,17 +110,20 @@ function FilaArbol({
               <IconoAccion nombre="editar" />
             </Button>
           )}
-          {puedeDesactivar && nodo.activo && (
-            <Button
-              variante="fantasma"
-              tamano="icono"
-              onClick={() => onDesactivar(nodo)}
-              aria-label={`Desactivar ${nodo.nombre}`}
-              title={`Desactivar ${nodo.nombre}`}
-            >
-              <IconoAccion nombre="desactivar" />
-            </Button>
-          )}
+          {accionesDisponibles(nodo.status)
+            .filter(puede)
+            .map((tipo) => (
+              <Button
+                key={tipo}
+                variante="fantasma"
+                tamano="icono"
+                onClick={() => onAccion(tipo, nodo)}
+                aria-label={`${ETIQUETAS_ACCION[tipo]} ${nodo.nombre}`}
+                title={`${ETIQUETAS_ACCION[tipo]} ${nodo.nombre}`}
+              >
+                <IconoAccion nombre={tipo} />
+              </Button>
+            ))}
         </div>
       </div>
 
@@ -133,9 +137,9 @@ function FilaArbol({
               contraidos={contraidos}
               onAlternar={onAlternar}
               puedeEditar={puedeEditar}
-              puedeDesactivar={puedeDesactivar}
+              puede={puede}
               onEditar={onEditar}
-              onDesactivar={onDesactivar}
+              onAccion={onAccion}
             />
           ))}
         </ul>
@@ -147,9 +151,9 @@ function FilaArbol({
 export function ArbolAreas({
   areas,
   puedeEditar,
-  puedeDesactivar,
+  puede,
   onEditar,
-  onDesactivar,
+  onAccion,
 }: Props) {
   const [contraidos, setContraidos] = useState<Set<number>>(new Set())
   const nodos = useMemo(() => construirArbol(areas), [areas])
@@ -188,9 +192,9 @@ export function ArbolAreas({
             contraidos={contraidos}
             onAlternar={alternar}
             puedeEditar={puedeEditar}
-            puedeDesactivar={puedeDesactivar}
+            puede={puede}
             onEditar={onEditar}
-            onDesactivar={onDesactivar}
+            onAccion={onAccion}
           />
         ))}
       </ul>

@@ -6,6 +6,7 @@ type Props = {
   titulo: string
   mensaje: string
   confirmando?: boolean
+  confirmarTexto?: string
   onConfirmar: () => void
   onCancelar: () => void
 }
@@ -14,6 +15,7 @@ export function ConfirmDialog({
   titulo,
   mensaje,
   confirmando = false,
+  confirmarTexto = 'Desactivar',
   onConfirmar,
   onCancelar,
 }: Props) {
@@ -56,7 +58,7 @@ export function ConfirmDialog({
             Cancelar
           </Button>
           <Button variante="peligro" onClick={onConfirmar} cargando={confirmando}>
-            Desactivar
+            {confirmarTexto}
           </Button>
         </div>
       </div>

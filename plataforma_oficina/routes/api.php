@@ -27,6 +27,27 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/opciones', [OpcionesController::class, 'index']);
 
     Route::get('areas/arbol', [AreaController::class, 'arbol']);
+
+    Route::post('areas/{area}/activar', [AreaController::class, 'activar']);
+    Route::post('areas/{area}/desactivar', [AreaController::class, 'desactivar']);
+    Route::post('areas/{area}/restaurar', [AreaController::class, 'restaurar']);
+
+    Route::post('cargos/{cargo}/activar', [CargoController::class, 'activar']);
+    Route::post('cargos/{cargo}/desactivar', [CargoController::class, 'desactivar']);
+    Route::post('cargos/{cargo}/restaurar', [CargoController::class, 'restaurar']);
+
+    Route::post('roles/{rol}/activar', [RolController::class, 'activar']);
+    Route::post('roles/{rol}/desactivar', [RolController::class, 'desactivar']);
+    Route::post('roles/{rol}/restaurar', [RolController::class, 'restaurar']);
+
+    Route::post('permisos/{permiso}/activar', [PermisoController::class, 'activar']);
+    Route::post('permisos/{permiso}/desactivar', [PermisoController::class, 'desactivar']);
+    Route::post('permisos/{permiso}/restaurar', [PermisoController::class, 'restaurar']);
+
+    Route::post('usuarios/{usuario}/activar', [UsuarioController::class, 'activar']);
+    Route::post('usuarios/{usuario}/desactivar', [UsuarioController::class, 'desactivar']);
+    Route::post('usuarios/{usuario}/restaurar', [UsuarioController::class, 'restaurar']);
+
     Route::apiResource('areas', AreaController::class);
     Route::apiResource('cargos', CargoController::class);
     Route::apiResource('roles', RolController::class)->parameters(['roles' => 'rol']);

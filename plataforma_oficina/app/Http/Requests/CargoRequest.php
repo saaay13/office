@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StatusEntidad;
 use App\Models\Cargo;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -50,6 +51,7 @@ class CargoRequest extends FormRequest
                     $nombre = Str::lower((string) $value);
 
                     $duplicado = Cargo::query()
+                        ->where('status', '!=', StatusEntidad::Eliminado->value)
                         ->when($id !== null, fn ($consulta) => $consulta->whereKeyNot($id))
                         ->get(['id', 'nombre'])
                         ->contains(fn (Cargo $registro): bool => Str::lower($registro->nombre) === $nombre);
@@ -60,7 +62,7 @@ class CargoRequest extends FormRequest
                 },
             ],
             'descripcion' => ['nullable', 'string', 'max:255'],
-            'activo' => [
+            'status' => [
                 'sometimes',
                 function (string $attribute, mixed $value, $fail): void {
                     $fail('El estado del cargo no se puede cambiar desde este formulario.');

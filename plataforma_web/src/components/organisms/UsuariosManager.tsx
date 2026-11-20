@@ -2,12 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { Alert,Badge,Button,IconoAccion,Input,Select } from '../atoms'
-import { ConfirmDialog,FormModal,SearchField,Tabla,EmptyState } from '../molecules'
+import { Alert, Button, EtiquetaEstado, IconoAccion, Input, Select } from '../atoms'
+import { ConfirmDialog, FormModal, SearchField, Tabla, EmptyState } from '../molecules'
 import type { ColumnaTabla } from '../molecules/Tabla'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
+import {
+  accionesDisponibles,
+  ejecutarAccion,
+  ETIQUETAS_ACCION,
+  FILTROS_ESTADO,
+  mensajeConfirmacion,
+  mensajeExito,
+  sufijoPermiso,
+} from '../../services/catalogos'
+import type { AccionCatalogo } from '../../services/catalogos'
 import { erroresDeCampo, mensajeDeError } from '../../services/errores'
 import type { Area, Cargo, Opciones, Rol, Usuario } from '../../types'
 
@@ -24,6 +34,8 @@ type Formulario = {
   password_confirmation: string
 }
 
+type Accion = { tipo: AccionCatalogo; usuario: Usuario }
+
 const formularioVacio: Formulario = {
   nombres: '',
   apellidos: '',
@@ -38,21 +50,25 @@ const formularioVacio: Formulario = {
 }
 
 export function UsuariosManager() {
-  const { elementos, cargando, error, recargar } = useRecurso<Usuario>('usuarios')
-  const { usuario: usuarioActual, tienePermiso } = useAuth()
   const [parametros] = useSearchParams()
   const consulta = parametros.get('q') ?? ''
+  const { usuario: usuarioActual, tienePermiso } = useAuth()
+  const [estado, setEstado] = useState('')
   const [opciones, setOpciones] = useState<Opciones | null>(null)
   const [busqueda, setBusqueda] = useState(consulta)
   const [formulario, setFormulario] = useState<Formulario>(formularioVacio)
   const [editando, setEditando] = useState<Usuario | null>(null)
   const [modalAbierta, setModalAbierta] = useState(false)
-  const [aDesactivar, setADesactivar] = useState<Usuario | null>(null)
+  const [accion, setAccion] = useState<Accion | null>(null)
   const [guardando, setGuardando] = useState(false)
-  const [desactivando, setDesactivando] = useState(false)
+  const [procesando, setProcesando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [fallo, setFallo] = useState('')
   const [errores, setErrores] = useState<Record<string, string>>({})
+
+  const filtros = useMemo(() => ({ status: estado || undefined }), [estado])
+
+  const { elementos, cargando, error, recargar } = useRecurso<Usuario>('usuarios', filtros)
 
   useEffect(() => {
     setBusqueda(consulta)
@@ -112,7 +128,7 @@ export function UsuariosManager() {
         id: editando.cargo_id,
         nombre: editando.cargo?.nombre ?? `Cargo #${editando.cargo_id}`,
         descripcion: null,
-        activo: false,
+        status: 'desactivado' as const,
       },
     ]
   }, [editando, opciones])
@@ -151,11 +167,7 @@ export function UsuariosManager() {
     {
       clave: 'estado',
       nombre: 'Estado',
-      celda: (usuario) => (
-        <Badge tono={usuario.activo ? 'exito' : 'neutro'}>
-          {usuario.activo ? 'Activo' : 'Inactivo'}
-        </Badge>
-      ),
+      celda: (usuario) => <EtiquetaEstado status={usuario.status} />,
     },
     {
       clave: 'acciones',
@@ -163,31 +175,35 @@ export function UsuariosManager() {
       alineacion: 'derecha',
       celda: (usuario) => (
         <div className="flex justify-end gap-1.5">
-          {tienePermiso('usuarios.editar') && (
-            <Button
-              variante="contorno"
-              tamano="icono"
-              onClick={() => abrirEdicion(usuario)}
-              aria-label={`Editar ${usuario.nombre_completo}`}
-              title={`Editar ${usuario.nombre_completo}`}
-            >
-              <IconoAccion nombre="editar" />
-            </Button>
-          )}
-
-          {tienePermiso('usuarios.desactivar') &&
-            usuario.activo &&
-            usuario.id !== usuarioActual?.id && (
+          {tienePermiso('usuarios.editar') &&
+            usuario.id !== usuarioActual?.id &&
+            usuario.status !== 'eliminado' && (
               <Button
-                variante="peligroSuave"
+                variante="contorno"
                 tamano="icono"
-                onClick={() => setADesactivar(usuario)}
-                aria-label={`Desactivar ${usuario.nombre_completo}`}
-                title={`Desactivar ${usuario.nombre_completo}`}
+                onClick={() => abrirEdicion(usuario)}
+                aria-label={`Editar ${usuario.nombre_completo}`}
+                title={`Editar ${usuario.nombre_completo}`}
               >
-                <IconoAccion nombre="desactivar" />
+                <IconoAccion nombre="editar" />
               </Button>
             )}
+
+          {usuario.id !== usuarioActual?.id &&
+            accionesDisponibles(usuario.status)
+              .filter((tipo) => tienePermiso(`usuarios.${sufijoPermiso(tipo)}`))
+              .map((tipo) => (
+                <Button
+                  key={tipo}
+                  variante={tipo === 'activar' || tipo === 'restaurar' ? 'contorno' : 'peligroSuave'}
+                  tamano="icono"
+                  onClick={() => setAccion({ tipo, usuario })}
+                  aria-label={`${ETIQUETAS_ACCION[tipo]} ${usuario.nombre_completo}`}
+                  title={`${ETIQUETAS_ACCION[tipo]} ${usuario.nombre_completo}`}
+                >
+                  <IconoAccion nombre={tipo} />
+                </Button>
+              ))}
         </div>
       ),
     },
@@ -244,7 +260,7 @@ export function UsuariosManager() {
 
     try {
       if (editando === null) {
-        await api.usuarios.crear({ ...datos, activo: true })
+        await api.usuarios.crear(datos)
         setAviso('Usuario creado correctamente.')
       } else {
         delete datos.usuario
@@ -262,30 +278,41 @@ export function UsuariosManager() {
     }
   }
 
-  async function desactivar(): Promise<void> {
-    if (aDesactivar === null) {
+  async function ejecutar(): Promise<void> {
+    if (accion === null) {
       return
     }
 
-    setDesactivando(true)
+    setProcesando(true)
     setFallo('')
 
     try {
-      await api.usuarios.desactivar(aDesactivar.id)
-      setAviso('Usuario desactivado correctamente.')
-      setADesactivar(null)
+      await ejecutarAccion('usuarios', accion.usuario.id, accion.tipo)
+      setAviso(mensajeExito(accion.tipo, 'Usuario'))
+      setAccion(null)
       await recargar()
-    } catch (falloDesactivacion) {
-      setFallo(mensajeDeError(falloDesactivacion))
+    } catch (falloAccion) {
+      setFallo(mensajeDeError(falloAccion))
     } finally {
-      setDesactivando(false)
+      setProcesando(false)
     }
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar usuario o área" />
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchField valor={busqueda} onChange={setBusqueda} placeholder="Buscar usuario o área" />
+          <Select
+            etiqueta="Estado"
+            value={estado}
+            onChange={(evento) => setEstado(evento.target.value)}
+            opciones={FILTROS_ESTADO}
+            permitirVacio
+            textoVacio="Todos los estados"
+            className="w-36"
+          />
+        </div>
 
         {tienePermiso('usuarios.crear') && (
           <Button onClick={abrirNuevo}>
@@ -306,14 +333,14 @@ export function UsuariosManager() {
       ) : usuarios.length === 0 ? (
         <EmptyState
           titulo="Sin usuarios"
-          descripcion="No se registran usuarios para la búsqueda actual."
+          descripcion="No se registran usuarios para los filtros actuales."
         />
       ) : (
         <Tabla
           columnas={columnas}
           datos={usuarios}
           obtenerClave={(usuario) => usuario.id}
-          mensajeVacio="No se registran usuarios para la búsqueda actual."
+          mensajeVacio="No se registran usuarios para los filtros actuales."
         />
       )}
 
@@ -392,7 +419,7 @@ export function UsuariosManager() {
                 }
                 opciones={cargosDisponibles.map((cargo: Cargo) => ({
                   valor: cargo.id,
-                  texto: cargo.activo ? cargo.nombre : `${cargo.nombre} (inactivo)`,
+                  texto: cargo.status === 'activo' ? cargo.nombre : `${cargo.nombre} (desactivado)`,
                 }))}
                 permitirVacio
                 textoVacio="Sin cargo"
@@ -430,13 +457,14 @@ export function UsuariosManager() {
         </FormModal>
       )}
 
-      {aDesactivar && (
+      {accion && (
         <ConfirmDialog
-          titulo="Desactivar usuario"
-          mensaje={`¿Desactivar a "${aDesactivar.nombre_completo}"? Se cerrarán sus sesiones activas.`}
-          confirmando={desactivando}
-          onConfirmar={() => void desactivar()}
-          onCancelar={() => setADesactivar(null)}
+          titulo={`${ETIQUETAS_ACCION[accion.tipo]} usuario`}
+          mensaje={`${mensajeConfirmacion(accion.tipo, accion.usuario.nombre_completo)}${accion.tipo === 'eliminar' ? ' El usuario pasará a la papelera y se cerrarán sus sesiones.' : ''}${accion.tipo === 'restaurar' ? ' Volverá con estado desactivado.' : ''}`}
+          confirmando={procesando}
+          confirmarTexto={ETIQUETAS_ACCION[accion.tipo]}
+          onConfirmar={() => void ejecutar()}
+          onCancelar={() => setAccion(null)}
         />
       )}
     </div>

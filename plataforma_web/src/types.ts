@@ -1,10 +1,12 @@
+export type StatusEntidad = 'activo' | 'desactivado' | 'eliminado'
+
 export type Permiso = {
   id: number
   clave: string
   nombre: string
   modulo: string
   descripcion: string | null
-  activo: boolean
+  status: StatusEntidad
 }
 
 export type Area = {
@@ -17,7 +19,7 @@ export type Area = {
   ruta: string | null
   email: string | null
   telefono: string | null
-  activo: boolean
+  status: StatusEntidad
   responsable_id: number | null
   padre?: { id: number; nombre: string; codigo: string | null } | null
   responsable?: { id: number; nombre: string } | null
@@ -27,7 +29,7 @@ export type Cargo = {
   id: number
   nombre: string
   descripcion: string | null
-  activo: boolean
+  status: StatusEntidad
 }
 
 export type Rol = {
@@ -36,7 +38,7 @@ export type Rol = {
   nombre: string
   descripcion: string | null
   es_sistema: boolean
-  activo: boolean
+  status: StatusEntidad
   permisos?: string[]
 }
 
@@ -48,7 +50,7 @@ export type Usuario = {
   usuario: string
   email: string
   telefono: string | null
-  activo: boolean
+  status: StatusEntidad
   area_id: number
   rol_id: number
   cargo_id: number | null

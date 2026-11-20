@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\StatusEntidad;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,7 +20,8 @@ class AreaResource extends JsonResource
             'ruta' => $this->ruta,
             'email' => $this->email,
             'telefono' => $this->telefono,
-            'activo' => $this->activo,
+            'status' => $this->status,
+            'activo' => $this->status === StatusEntidad::Activo,
             'responsable_id' => $this->responsable_id,
             'padre' => $this->whenLoaded('padre', fn (): ?array => $this->padre === null ? null : [
                 'id' => $this->padre->id,

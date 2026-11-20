@@ -28,8 +28,28 @@ class CargoPolicy
         return $user->tienePermiso(Permisos::CARGOS_EDITAR);
     }
 
-    public function delete(User $user, Cargo $cargo): bool
+    public function activar(User $user, Cargo $cargo): bool
     {
         return $user->tienePermiso(Permisos::CARGOS_DESACTIVAR);
+    }
+
+    public function desactivar(User $user, Cargo $cargo): bool
+    {
+        return $user->tienePermiso(Permisos::CARGOS_DESACTIVAR);
+    }
+
+    public function eliminar(User $user, Cargo $cargo): bool
+    {
+        return $user->tienePermiso(Permisos::CARGOS_ELIMINAR);
+    }
+
+    public function restaurar(User $user, Cargo $cargo): bool
+    {
+        return $user->tienePermiso(Permisos::CARGOS_RESTAURAR);
+    }
+
+    public function delete(User $user, Cargo $cargo): bool
+    {
+        return $this->eliminar($user, $cargo);
     }
 }

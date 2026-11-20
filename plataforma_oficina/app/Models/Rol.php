@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusEntidad;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,12 +20,12 @@ class Rol extends Model
         'nombre',
         'descripcion',
         'es_sistema',
-        'activo',
+        'status',
     ];
 
     protected $casts = [
         'es_sistema' => 'boolean',
-        'activo' => 'boolean',
+        'status' => StatusEntidad::class,
     ];
 
     public function permisos(): BelongsToMany
@@ -39,6 +40,21 @@ class Rol extends Model
 
     public function scopeActivos(Builder $query): Builder
     {
-        return $query->where('activo', true);
+        return $query->where('status', StatusEntidad::Activo->value);
+    }
+
+    public function scopeDesactivados(Builder $query): Builder
+    {
+        return $query->where('status', StatusEntidad::Desactivado->value);
+    }
+
+    public function scopeEliminados(Builder $query): Builder
+    {
+        return $query->where('status', StatusEntidad::Eliminado->value);
+    }
+
+    public function scopeNoEliminados(Builder $query): Builder
+    {
+        return $query->where('status', '!=', StatusEntidad::Eliminado->value);
     }
 }

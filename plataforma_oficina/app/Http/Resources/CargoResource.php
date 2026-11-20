@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\StatusEntidad;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,7 +14,8 @@ class CargoResource extends JsonResource
             'id' => $this->id,
             'nombre' => $this->nombre,
             'descripcion' => $this->descripcion,
-            'activo' => $this->activo,
+            'status' => $this->status,
+            'activo' => $this->status === StatusEntidad::Activo,
         ];
     }
 }

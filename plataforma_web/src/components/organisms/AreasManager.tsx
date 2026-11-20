@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { List, Network, Plus } from 'lucide-react'
-import { Alert,Badge,Button,IconoAccion,Input, Select, Textarea } from '../atoms'
-import { ConfirmDialog,  FormModal,SearchField,Tabla } from '../molecules'
-import type {ColumnaTabla} from '../molecules'
+import { Alert, Button, EtiquetaEstado, IconoAccion, Input, Select, Textarea } from '../atoms'
+import { ConfirmDialog, FormModal, SearchField, Tabla } from '../molecules'
+import type { ColumnaTabla } from '../molecules'
 import { ArbolAreas } from './ArbolAreas'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
+import {
+  accionesDisponibles,
+  ejecutarAccion,
+  ETIQUETAS_ACCION,
+  mensajeConfirmacion,
+  mensajeExito,
+  sufijoPermiso,
+} from '../../services/catalogos'
+import type { AccionCatalogo } from '../../services/catalogos'
 import { erroresDeCampo, mensajeDeError } from '../../services/errores'
 import type { Area, Usuario } from '../../types'
 
@@ -20,6 +29,8 @@ type Formulario = {
   email: string
   telefono: string
 }
+
+type Accion = { tipo: AccionCatalogo; area: Area }
 
 const formularioVacio: Formulario = {
   codigo: '',
@@ -40,8 +51,9 @@ const tipos = [
 ]
 
 const estados = [
-  { valor: 'activas', texto: 'Activas' },
-  { valor: 'inactivas', texto: 'Inactivas' },
+  { valor: 'activo', texto: 'Activas' },
+  { valor: 'desactivado', texto: 'Desactivadas' },
+  { valor: 'eliminado', texto: 'Papelera' },
 ]
 
 export function AreasManager() {
@@ -54,9 +66,9 @@ export function AreasManager() {
   const [formulario, setFormulario] = useState<Formulario>(formularioVacio)
   const [editando, setEditando] = useState<Area | null>(null)
   const [modalAbierta, setModalAbierta] = useState(false)
-  const [aDesactivar, setADesactivar] = useState<Area | null>(null)
+  const [accion, setAccion] = useState<Accion | null>(null)
   const [guardando, setGuardando] = useState(false)
-  const [desactivando, setDesactivando] = useState(false)
+  const [procesando, setProcesando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [fallo, setFallo] = useState('')
   const [errores, setErrores] = useState<Record<string, string>>({})
@@ -74,7 +86,7 @@ export function AreasManager() {
   const filtros = useMemo(
     () => ({
       q: busquedaAplicada || undefined,
-      activo: estado === '' ? undefined : estado === 'activas',
+      status: estado || undefined,
       tipo: tipoFiltro || undefined,
     }),
     [busquedaAplicada, estado, tipoFiltro],
@@ -93,7 +105,7 @@ export function AreasManager() {
       .listar()
       .then((datos) => {
         if (activo) {
-          setResponsables(datos.filter((registro) => registro.activo))
+          setResponsables(datos.filter((registro) => registro.status === 'activo'))
         }
       })
       .catch((falloCarga: unknown) => {
@@ -169,9 +181,7 @@ export function AreasManager() {
     {
       clave: 'estado',
       nombre: 'Estado',
-      celda: (area) => (
-        <Badge tono={area.activo ? 'exito' : 'neutro'}>{area.activo ? 'Activa' : 'Inactiva'}</Badge>
-      ),
+      celda: (area) => <EtiquetaEstado status={area.status} femenino />,
     },
     {
       clave: 'acciones',
@@ -179,7 +189,7 @@ export function AreasManager() {
       alineacion: 'derecha',
       celda: (area) => (
         <div className="flex justify-end gap-1.5">
-          {tienePermiso('areas.editar') && (
+          {tienePermiso('areas.editar') && area.status !== 'eliminado' && (
             <Button
               variante="contorno"
               tamano="icono"
@@ -190,17 +200,20 @@ export function AreasManager() {
               <IconoAccion nombre="editar" />
             </Button>
           )}
-          {tienePermiso('areas.desactivar') && area.activo && (
-            <Button
-              variante="peligroSuave"
-              tamano="icono"
-              onClick={() => setADesactivar(area)}
-              aria-label={`Desactivar ${area.nombre}`}
-              title={`Desactivar ${area.nombre}`}
-            >
-              <IconoAccion nombre="desactivar" />
-            </Button>
-          )}
+          {accionesDisponibles(area.status)
+            .filter((tipo) => tienePermiso(`areas.${sufijoPermiso(tipo)}`))
+            .map((tipo) => (
+              <Button
+                key={tipo}
+                variante={tipo === 'activar' || tipo === 'restaurar' ? 'contorno' : 'peligroSuave'}
+                tamano="icono"
+                onClick={() => setAccion({ tipo, area })}
+                aria-label={`${ETIQUETAS_ACCION[tipo]} ${area.nombre}`}
+                title={`${ETIQUETAS_ACCION[tipo]} ${area.nombre}`}
+              >
+                <IconoAccion nombre={tipo} />
+              </Button>
+            ))}
         </div>
       ),
     },
@@ -267,23 +280,23 @@ export function AreasManager() {
     }
   }
 
-  async function desactivar(): Promise<void> {
-    if (aDesactivar === null) {
+  async function ejecutar(): Promise<void> {
+    if (accion === null) {
       return
     }
 
-    setDesactivando(true)
+    setProcesando(true)
     setFallo('')
 
     try {
-      await api.areas.desactivar(aDesactivar.id)
-      setAviso('Área desactivada correctamente.')
-      setADesactivar(null)
+      await ejecutarAccion('areas', accion.area.id, accion.tipo)
+      setAviso(mensajeExito(accion.tipo, 'Área', true))
+      setAccion(null)
       await recargar()
-    } catch (falloDesactivacion) {
-      setFallo(mensajeDeError(falloDesactivacion))
+    } catch (falloAccion) {
+      setFallo(mensajeDeError(falloAccion))
     } finally {
-      setDesactivando(false)
+      setProcesando(false)
     }
   }
 
@@ -369,9 +382,9 @@ export function AreasManager() {
         <ArbolAreas
           areas={elementos}
           puedeEditar={tienePermiso('areas.editar')}
-          puedeDesactivar={tienePermiso('areas.desactivar')}
+          puede={(tipo) => tienePermiso(`areas.${sufijoPermiso(tipo)}`)}
           onEditar={abrirEdicion}
-          onDesactivar={setADesactivar}
+          onAccion={(tipo, area) => setAccion({ tipo, area })}
         />
       )}
 
@@ -414,7 +427,7 @@ export function AreasManager() {
                 value={formulario.padre_id}
                 onChange={(evento) => setFormulario({ ...formulario, padre_id: evento.target.value })}
                 opciones={elementos
-                  .filter((area) => area.activo && !descendientes.has(area.id))
+                  .filter((area) => area.status === 'activo' && !descendientes.has(area.id))
                   .map((area) => ({ valor: area.id, texto: area.nombre }))}
                 permitirVacio
                 textoVacio="Ninguna (raíz)"
@@ -480,13 +493,14 @@ export function AreasManager() {
         </FormModal>
       )}
 
-      {aDesactivar && (
+      {accion && (
         <ConfirmDialog
-          titulo="Desactivar área"
-          mensaje={`¿Desactivar "${aDesactivar.nombre}"? No se puede desactivar un área con áreas hijas activas.`}
-          confirmando={desactivando}
-          onConfirmar={() => void desactivar()}
-          onCancelar={() => setADesactivar(null)}
+          titulo={`${ETIQUETAS_ACCION[accion.tipo]} área`}
+          mensaje={`${mensajeConfirmacion(accion.tipo, accion.area.nombre)}${accion.tipo === 'eliminar' ? ' El área pasará a la papelera y podrá restaurarse.' : ''}${accion.tipo === 'restaurar' ? ' Volverá con estado desactivado.' : ''}`}
+          confirmando={procesando}
+          confirmarTexto={ETIQUETAS_ACCION[accion.tipo]}
+          onConfirmar={() => void ejecutar()}
+          onCancelar={() => setAccion(null)}
         />
       )}
     </div>

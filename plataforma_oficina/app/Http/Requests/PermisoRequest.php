@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StatusEntidad;
 use App\Models\Permiso;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,12 +28,19 @@ class PermisoRequest extends FormRequest
                 $permiso === null ? 'required' : 'sometimes',
                 'string',
                 'max:100',
-                Rule::unique('permisos', 'clave')->ignore($permiso?->id),
+                Rule::unique('permisos', 'clave')
+                    ->where(fn ($consulta) => $consulta->where('status', '!=', StatusEntidad::Eliminado->value))
+                    ->ignore($permiso?->id),
             ],
             'nombre' => ['required', 'string', 'max:150'],
             'modulo' => ['required', 'string', 'max:50'],
             'descripcion' => ['nullable', 'string', 'max:255'],
-            'activo' => ['sometimes', 'boolean'],
+            'status' => [
+                'sometimes',
+                function (string $attribute, mixed $value, $fail): void {
+                    $fail('El estado del permiso no se puede cambiar desde este formulario.');
+                },
+            ],
         ];
     }
 

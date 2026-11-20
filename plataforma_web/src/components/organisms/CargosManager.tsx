@@ -1,23 +1,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Plus } from 'lucide-react'
-import { Alert,Badge,Button,IconoAccion,Input,Select,Textarea } from '../atoms'
-import { ConfirmDialog,FormModal,SearchField,Tabla } from '../molecules'
+import { Alert, Button, EtiquetaEstado, IconoAccion, Input, Select, Textarea } from '../atoms'
+import { ConfirmDialog, FormModal, SearchField, Tabla } from '../molecules'
 import type { ColumnaTabla } from '../molecules'
 import { useAuth } from '../../context/AuthContext'
 import { useRecurso } from '../../hooks/useRecurso'
 import { api } from '../../services/api'
+import {
+  accionesDisponibles,
+  ejecutarAccion,
+  ETIQUETAS_ACCION,
+  FILTROS_ESTADO,
+  mensajeConfirmacion,
+  mensajeExito,
+  sufijoPermiso,
+} from '../../services/catalogos'
+import type { AccionCatalogo } from '../../services/catalogos'
 import { erroresDeCampo, mensajeDeError } from '../../services/errores'
 import type { Cargo } from '../../types'
 
 type Formulario = { nombre: string; descripcion: string }
+type Accion = { tipo: AccionCatalogo; cargo: Cargo }
 
 const formularioVacio: Formulario = { nombre: '', descripcion: '' }
-
-const estados = [
-  { valor: 'activos', texto: 'Activos' },
-  { valor: 'inactivos', texto: 'Inactivos' },
-]
 
 export function CargosManager() {
   const { tienePermiso } = useAuth()
@@ -27,9 +33,9 @@ export function CargosManager() {
   const [formulario, setFormulario] = useState<Formulario>(formularioVacio)
   const [editando, setEditando] = useState<Cargo | null>(null)
   const [modalAbierta, setModalAbierta] = useState(false)
-  const [aDesactivar, setADesactivar] = useState<Cargo | null>(null)
+  const [accion, setAccion] = useState<Accion | null>(null)
   const [guardando, setGuardando] = useState(false)
-  const [desactivando, setDesactivando] = useState(false)
+  const [procesando, setProcesando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [fallo, setFallo] = useState('')
   const [errores, setErrores] = useState<Record<string, string>>({})
@@ -45,7 +51,7 @@ export function CargosManager() {
   const filtros = useMemo(
     () => ({
       q: busquedaAplicada || undefined,
-      activo: estado === '' ? undefined : estado === 'activos',
+      status: estado || undefined,
     }),
     [busquedaAplicada, estado],
   )
@@ -66,9 +72,7 @@ export function CargosManager() {
     {
       clave: 'estado',
       nombre: 'Estado',
-      celda: (cargo) => (
-        <Badge tono={cargo.activo ? 'exito' : 'neutro'}>{cargo.activo ? 'Activo' : 'Inactivo'}</Badge>
-      ),
+      celda: (cargo) => <EtiquetaEstado status={cargo.status} />,
     },
     {
       clave: 'acciones',
@@ -76,7 +80,7 @@ export function CargosManager() {
       alineacion: 'derecha',
       celda: (cargo) => (
         <div className="flex justify-end gap-1.5">
-          {tienePermiso('cargos.editar') && (
+          {tienePermiso('cargos.editar') && cargo.status !== 'eliminado' && (
             <Button
               variante="contorno"
               tamano="icono"
@@ -87,17 +91,20 @@ export function CargosManager() {
               <IconoAccion nombre="editar" />
             </Button>
           )}
-          {tienePermiso('cargos.desactivar') && cargo.activo && (
-            <Button
-              variante="peligroSuave"
-              tamano="icono"
-              onClick={() => setADesactivar(cargo)}
-              aria-label={`Desactivar ${cargo.nombre}`}
-              title={`Desactivar ${cargo.nombre}`}
-            >
-              <IconoAccion nombre="desactivar" />
-            </Button>
-          )}
+          {accionesDisponibles(cargo.status)
+            .filter((tipo) => tienePermiso(`cargos.${sufijoPermiso(tipo)}`))
+            .map((tipo) => (
+              <Button
+                key={tipo}
+                variante={tipo === 'activar' || tipo === 'restaurar' ? 'contorno' : 'peligroSuave'}
+                tamano="icono"
+                onClick={() => setAccion({ tipo, cargo })}
+                aria-label={`${ETIQUETAS_ACCION[tipo]} ${cargo.nombre}`}
+                title={`${ETIQUETAS_ACCION[tipo]} ${cargo.nombre}`}
+              >
+                <IconoAccion nombre={tipo} />
+              </Button>
+            ))}
         </div>
       ),
     },
@@ -149,23 +156,23 @@ export function CargosManager() {
     }
   }
 
-  async function desactivar(): Promise<void> {
-    if (aDesactivar === null) {
+  async function ejecutar(): Promise<void> {
+    if (accion === null) {
       return
     }
 
-    setDesactivando(true)
+    setProcesando(true)
     setFallo('')
 
     try {
-      await api.cargos.desactivar(aDesactivar.id)
-      setAviso('Cargo desactivado correctamente.')
-      setADesactivar(null)
+      await ejecutarAccion('cargos', accion.cargo.id, accion.tipo)
+      setAviso(mensajeExito(accion.tipo, 'Cargo'))
+      setAccion(null)
       await recargar()
-    } catch (falloDesactivacion) {
-      setFallo(mensajeDeError(falloDesactivacion))
+    } catch (falloAccion) {
+      setFallo(mensajeDeError(falloAccion))
     } finally {
-      setDesactivando(false)
+      setProcesando(false)
     }
   }
 
@@ -178,7 +185,7 @@ export function CargosManager() {
             etiqueta="Estado"
             value={estado}
             onChange={(evento) => setEstado(evento.target.value)}
-            opciones={estados}
+            opciones={FILTROS_ESTADO}
             permitirVacio
             textoVacio="Todos los estados"
             className="w-36"
@@ -250,13 +257,14 @@ export function CargosManager() {
         </FormModal>
       )}
 
-      {aDesactivar && (
+      {accion && (
         <ConfirmDialog
-          titulo="Desactivar cargo"
-          mensaje={`¿Desactivar el cargo "${aDesactivar.nombre}"? Los usuarios que lo tengan asignado conservarán el cargo, pero no se podrá asignar a otros usuarios.`}
-          confirmando={desactivando}
-          onConfirmar={() => void desactivar()}
-          onCancelar={() => setADesactivar(null)}
+          titulo={`${ETIQUETAS_ACCION[accion.tipo]} cargo`}
+          mensaje={`${mensajeConfirmacion(accion.tipo, accion.cargo.nombre)}${accion.tipo === 'eliminar' ? ' El cargo pasará a la papelera y podrá restaurarse.' : ''}${accion.tipo === 'restaurar' ? ' Volverá con estado desactivado.' : ''}`}
+          confirmando={procesando}
+          confirmarTexto={ETIQUETAS_ACCION[accion.tipo]}
+          onConfirmar={() => void ejecutar()}
+          onCancelar={() => setAccion(null)}
         />
       )}
     </div>

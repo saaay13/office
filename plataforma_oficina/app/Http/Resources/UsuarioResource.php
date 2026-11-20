@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\StatusEntidad;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,7 +18,8 @@ class UsuarioResource extends JsonResource
             'usuario' => $this->usuario,
             'email' => $this->email,
             'telefono' => $this->telefono,
-            'activo' => $this->activo,
+            'status' => $this->status,
+            'activo' => $this->status === StatusEntidad::Activo,
             'area_id' => $this->area_id,
             'rol_id' => $this->rol_id,
             'cargo_id' => $this->cargo_id,
